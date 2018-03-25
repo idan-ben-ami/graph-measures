@@ -1,0 +1,19 @@
+import networkx as nx
+
+from features_infra.feature_calculators import NodeFeatureCalculator, FeatureMeta
+
+
+class LoadCentralityCalculator(NodeFeatureCalculator):
+    def is_relevant(self):
+        return True
+
+    def _calculate(self, include: set):
+        self._features = nx.load_centrality(self._gnx)
+
+
+feature_entry = {
+    "load_centrality": FeatureMeta(LoadCentralityCalculator, {"load_c"}),
+}
+
+if __name__ == "__main__":
+    pass

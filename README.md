@@ -1,2 +1,2 @@
-# topo_graph_features
+# topo-graph-features
 Topological feature calculators infrastructure.

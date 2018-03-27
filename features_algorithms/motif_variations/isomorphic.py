@@ -12,6 +12,7 @@ class IsomorphismGenerator:
         graphs = self._generate_all_graphs()
         self._isomorphisms = self._group_to_isomorphisms(graphs)
         self._remove_irrelevant()
+        self._reorganize()
 
     # Generate all possible graphs of size 'group_size'
     def _generate_all_graphs(self):
@@ -49,6 +50,13 @@ class IsomorphismGenerator:
             isomorphisms[None] = {}
         for n in irrelevant:
             isomorphisms[None].update(isomorphisms.pop(n))
+
+    def _reorganize(self):
+        keys = [x for x in self._isomorphisms if x is not None]
+        irrelevant = self._isomorphisms.get(None)
+        self._isomorphisms = {i: self._isomorphisms[key] for i, key in enumerate(keys)}
+        if irrelevant:
+            self._isomorphisms[None] = irrelevant
 
     def num_2_motif(self):
         return {num: motif_num for motif_num, group in self._isomorphisms.items() for num in group}

@@ -1,4 +1,5 @@
 import os
+import pickle
 from functools import partial
 from itertools import permutations, combinations, tee
 
@@ -19,19 +20,18 @@ class MotifsNodeCalculator(NodeFeatureCalculator):
         self._level = level
         self._node_variations = {}
         self._all_motifs = None
-        self._calculate_motif_dictionaries()
+        self._load_variations()
 
     def is_relevant(self):
         return True
 
-    def _motif_path(self):
-        fname = "%d_nodes_data_%sdirected_key.txt" % (self._level, "" if self._gnx.is_directed() else "un")
-        return os.path.join(BASE_PATH, "motif_variations", fname)
+    def _load_variations_file(self):
+        fname = "%d_%sdirected.pkl" % (self._level, "" if self._gnx.is_directed() else "un")
+        fpath = os.path.join(BASE_PATH, "motif_variations", fname)
+        return pickle.load(open(fpath, "rb"))
 
-    def _calculate_motif_dictionaries(self):
-        # TODO: think of a way to generate this dictionary, rather than load it
-        motif_file = pandas.read_csv(self._motif_path(), delimiter="\t")
-        self._node_variations = {int(group_num): int(motif_num) for i, (motif_num, group_num) in motif_file.iterrows()}
+    def _load_variations(self):
+        self._node_variations = self._load_variations_file()
         self._all_motifs = set(self._node_variations.values())
 
     # here we pass on the edges of the sub-graph containing only the bunch nodes
@@ -179,13 +179,12 @@ class MotifsEdgeCalculator(MotifsNodeCalculator):
             return
 
         motif_edges = list(permutations(range(self._level), 2))
-        motif_file = pandas.read_csv(self._motif_path(), delimiter="\t")
 
         # level * (level - 1) is number of permutations of size 2
         num_edges = self._level * (self._level - 1)
-        for _, (motif_num, group_num) in motif_file.iterrows():
-            bin_repr = BitArray(length=num_edges, int=int(group_num))
-            self._edge_variations[int(group_num)] = [edge_type for bit, edge_type in zip(bin_repr, motif_edges) if bit]
+        for group_num, motif_num in self._node_variations.items():
+            bin_repr = BitArray(length=num_edges, int=group_num)
+            self._edge_variations[group_num] = set([edge_type for bit, edge_type in zip(bin_repr, motif_edges) if bit])
 
     # noinspection PyMethodOverriding
     def _calculate(self, include=None):

@@ -19,5 +19,7 @@ feature_entry = {
     "betweenness_centrality": FeatureMeta(BetweennessCentralityCalculator, {"betweenness"}),
 }
 
+
 if __name__ == "__main__":
-    pass
+    from tests.specific_feature_test import test_specific_feature
+    test_specific_feature(BetweennessCentralityCalculator)

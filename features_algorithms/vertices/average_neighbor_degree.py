@@ -16,30 +16,6 @@ feature_entry = {
 }
 
 
-def generate_graph():
-    g = nx.Graph()
-    g.add_edges_from([
-        (1, 2),
-        (1, 4),
-        (1, 5),
-        (2, 3),
-        (3, 4),
-        (4, 8),
-        (4, 5),
-        (5, 6),
-        (5, 7),
-    ])
-    return g
-
-
-def test_feature():
-    from loggers import PrintLogger
-    logger = PrintLogger("Oved's logger")
-    gnx = generate_graph()
-    feature = AverageNeighborDegreeCalculator(gnx, logger=logger)
-    feature.build()
-    print("test finished")
-
-
 if __name__ == "__main__":
-    test_feature()
+    from tests.specific_feature_test import test_specific_feature
+    test_specific_feature(AverageNeighborDegreeCalculator)

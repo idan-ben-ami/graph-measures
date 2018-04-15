@@ -136,21 +136,26 @@ class GraphFeatures(dict):
     # def to_matrix(self):
     #     raise NotImplementedError()
 
-    def sparse_matrix(self, entries_order: list=None, add_ones=False, dtype=None):
+    def to_matrix(self, entries_order: list=None, add_ones=False, dtype=None, mtype=None):
         if self._matrix is not None:
             return self._matrix
 
         if entries_order is None:
             entries_order = sorted(self._gnx)
 
+        if mtype is None:
+            mtype = sparse.csr_matrix
+
         # Consider caching the matrix creation (if it takes long time)
         sorted_features = map(at(1), sorted(self.items(), key=at(0)))
         # matrix = np.concatenate([feature.sparse_matrix() for feature in sorted_features], axis=1)  # 0: below, 1: near
-        mx = sparse.hstack([feature.sparse_matrix(entries_order) for feature in sorted_features], dtype=dtype)
+        mx = np.hstack([feature.to_matrix(entries_order, mtype=mtype) for feature in sorted_features])
         if add_ones:
-            mx = sparse.hstack([mx, np.ones((mx.shape[0], 1))], dtype=dtype)
-        self._matrix = mx
-        return mx
+            mx = np.hstack([mx, np.ones((mx.shape[0], 1))])
+        mx.astype(dtype)
+
+        self._matrix = mtype(mx)
+        return self._matrix
         # return sparse.csr_matrix(matrix, dtype=np.float32)
 
 

@@ -15,5 +15,7 @@ feature_entry = {
     "load_centrality": FeatureMeta(LoadCentralityCalculator, {"load_c"}),
 }
 
+
 if __name__ == "__main__":
-    pass
+    from tests.specific_feature_test import test_specific_feature
+    test_specific_feature(LoadCentralityCalculator)

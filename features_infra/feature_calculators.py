@@ -30,7 +30,7 @@ class FeatureCalculator:
         # self._abbr_set = abbr_set
         self._logger = EmptyLogger() if logger is None else logger
         self._gnx = gnx
-        self._print_name = self._get_print_name()
+        self._print_name = self.print_name()
 
     is_loaded = property(lambda self: self._is_loaded, None, None, "Whether the features were calculated")
 
@@ -41,8 +41,9 @@ class FeatureCalculator:
         self._gnx = None
         self._logger = None
 
-    def _get_print_name(self):
-        split_name = re.findall("[A-Z][^A-Z]*", type(self).__name__)
+    @classmethod
+    def print_name(cls):
+        split_name = re.findall("[A-Z][^A-Z]*", cls.__name__)
         if "calculator" == split_name[-1].lower():
             split_name = split_name[:-1]
         return "_".join(map(lambda x: x.lower(), split_name))
@@ -58,6 +59,7 @@ class FeatureCalculator:
             include = set()
         self._calculate(include)
         self._is_loaded = True
+        return self._features
 
     def _calculate(self, include):
         raise NotImplementedError()
@@ -68,9 +70,12 @@ class FeatureCalculator:
     def _params_order(self, input_order: list = None):
         raise NotImplementedError()
 
-    def sparse_matrix(self, params_order: list = None):
+    # sparse.csr_matrix
+    def to_matrix(self, params_order: list = None, mtype=np.matrix):
         mx = np.matrix([self._get_feature(element) for element in self._params_order(params_order)]).astype(np.float32)
-        return sparse.csr_matrix(mx)
+        if 1 == mx.shape[0]:
+            mx = mx.transpose()
+        return mtype(mx)
 
     # def __getattr__(self, item):
     #     if item in self._features:
@@ -127,14 +132,6 @@ class EdgeFeatureCalculator(FeatureCalculator):
 
     def _get_feature(self, element) -> np.ndarray:
         return np.array(self._features[element])
-
-
-# class AttractorBasinCalculator(NodeFeatureCalculator):
-#     @time_log
-#     def calculate(self):
-#         # TODO
-#         for node in self._gnx:
-#             self._calculae_node_feature(node)
 
 
 FeatureMeta = namedtuple("FeatureMeta", ("calculator", "abbr_set"))

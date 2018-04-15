@@ -4,7 +4,6 @@ from functools import partial
 from itertools import permutations, combinations, tee
 
 import networkx as nx
-import pandas
 from bitstring import BitArray
 
 from features_infra.feature_calculators import NodeFeatureCalculator, FeatureMeta
@@ -218,8 +217,9 @@ feature_edge_entry = {
 }
 
 if __name__ == "__main__":
-    print(BASE_PATH)
-    print(BASE_PATH)
+    from tests.specific_feature_test import test_specific_feature
+    test_specific_feature(nth_edges_motif(3))
+    test_specific_feature(nth_edges_motif(4))
 
     # def _calculate_motif_dictionaries(self):
     #     motifs_edges_dict = {}

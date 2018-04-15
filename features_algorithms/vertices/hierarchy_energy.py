@@ -16,14 +16,14 @@ class HierarchyEnergyCalculator(NodeFeatureCalculator):
     def _calculate_hierarchy_energy_index(self):
         vet_index, g = self._build_graph_matrix()
         l, y, tol, r, d = self._initialize_vars_from_laplacian_matrix(g)
-    # calculation of hierarchy Energy
+        # calculation of hierarchy Energy
         while np.linalg.norm(r) > tol:
             gamma = np.dot(r.T, r)
             alpha = np.divide(gamma, np.dot(d.T, np.dot(l, d)))
-            y = np.add(y, alpha*d)
-            r = np.subtract(r, alpha*np.dot(l, d))
+            y = np.add(y, alpha * d)
+            r = np.subtract(r, alpha * np.dot(l, d))
             beta = np.divide((np.dot(r.T, r)), gamma)
-            d = np.add(r, beta*d)
+            d = np.add(r, beta * d)
         else:
             return y, vet_index
 
@@ -33,7 +33,7 @@ class HierarchyEnergyCalculator(NodeFeatureCalculator):
         for i in vet_index:
             temp = []
             for j in self._gnx:
-                if self._gnx.has_edge(i,j):
+                if self._gnx.has_edge(i, j):
                     temp.append(1)
                 else:
                     temp.append(0)
@@ -41,9 +41,10 @@ class HierarchyEnergyCalculator(NodeFeatureCalculator):
         graph_matrix = np.squeeze(a)
         return vet_index, graph_matrix
 
-    def _initialize_vars_from_laplacian_matrix(self, g):
+    @staticmethod
+    def _initialize_vars_from_laplacian_matrix(g):
         # creating laplacian matrix
-        w = g+g.T
+        w = g + g.T
         d = np.diag(sum(w))
         l = d - w
         id = (np.sum(g, 0))
@@ -65,4 +66,5 @@ feature_entry = {
 }
 
 if __name__ == "__main__":
-    pass
+    from tests.specific_feature_test import test_specific_feature
+    test_specific_feature(HierarchyEnergyCalculator)

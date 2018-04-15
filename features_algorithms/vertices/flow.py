@@ -7,6 +7,7 @@ from features_infra.feature_calculators import NodeFeatureCalculator, FeatureMet
 
 class FlowCalculator(NodeFeatureCalculator):
     """See Y. Rozen & Y. Louzoun article <add-link>"""
+
     def __init__(self, *args, threshold=0, **kwargs):
         super(FlowCalculator, self).__init__(*args, **kwargs)
         self._threshold = threshold
@@ -17,7 +18,8 @@ class FlowCalculator(NodeFeatureCalculator):
     def _calculate(self, threshold):
         num_nodes = len(self._gnx)
         directed_dists = dict(weighted.all_pairs_dijkstra_path_length(self._gnx, num_nodes, weight='weight'))
-        undirected_dists = dict(weighted.all_pairs_dijkstra_path_length(self._gnx.to_undirected(), num_nodes, weight='weight'))
+        undirected_dists = dict(
+            weighted.all_pairs_dijkstra_path_length(self._gnx.to_undirected(), num_nodes, weight='weight'))
 
         # calculate the number of nodes reachable to/ from node 'n'
         b_u = {node: len(set(nx.ancestors(self._gnx, node)).union(nx.descendants(self._gnx, node)))
@@ -48,27 +50,6 @@ feature_entry = {
 }
 
 
-def generate_graph():
-    g = nx.DiGraph()
-    g.add_edges_from([
-        (1, 2),
-        (1, 4),
-        (2, 5),
-        (3, 1),
-        (4, 3),
-        (5, 3),
-    ])
-    return g
-
-
-def test_feature():
-    from loggers import PrintLogger
-    gnx = generate_graph()
-    logger = PrintLogger("Oved's Logger")
-    feature = FlowCalculator(gnx, logger=logger)
-    feature.build()
-    print("Bla")
-
-
 if __name__ == "__main__":
-    test_feature()
+    from tests.specific_feature_test import test_specific_feature
+    test_specific_feature(FlowCalculator)

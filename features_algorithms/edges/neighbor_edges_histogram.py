@@ -1,17 +1,15 @@
-import string
-from functools import partial
 from itertools import product as cartesian
 
 import networkx as nx
 import numpy as np
 
+from features_infra.feature_calculators import EdgeFeatureCalculator
+from loggers import PrintLogger
+
+
 # Python 2, 3 compatible metaclass
 # from future.utils import with_metaclass
 # with_metaclass(SingletonName, object)
-from scipy import sparse
-
-from features_infra.feature_calculators import EdgeFeatureCalculator
-from loggers import PrintLogger
 
 
 class NeighborEdgeHistogramCalculator(EdgeFeatureCalculator):

@@ -20,11 +20,6 @@ feature_entry = {
     "louvain": FeatureMeta(LouvainCalculator, {"lov"}),
 }
 
-
-# TODO
-def test_feature():
-    pass
-
-
 if __name__ == "__main__":
-    test_feature()
+    from tests.specific_feature_test import test_specific_feature
+    test_specific_feature(LouvainCalculator)

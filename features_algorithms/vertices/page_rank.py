@@ -9,7 +9,8 @@ class PageRankCalculator(NodeFeatureCalculator):
         self._alpha = alpha
 
     def is_relevant(self):
-        # TODO: is relevant for all types of graphs? (directed/ undirected)
+        # Undirected graphs will be converted to a directed
+        #       graph with two directed edges for each undirected edge.
         return True
 
     def _calculate(self, include: set):
@@ -20,11 +21,6 @@ feature_entry = {
     "page_rank": FeatureMeta(PageRankCalculator, {"pr"}),
 }
 
-
-# TODO
-def test_feature():
-    pass
-
-
 if __name__ == "__main__":
-    test_feature()
+    from tests.specific_feature_test import test_specific_feature
+    test_specific_feature(PageRankCalculator)

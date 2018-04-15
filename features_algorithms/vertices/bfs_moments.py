@@ -6,7 +6,7 @@ import numpy as np
 from features_infra.feature_calculators import NodeFeatureCalculator, FeatureMeta
 
 
-class BfsMoments(NodeFeatureCalculator):
+class BfsMomentsCalculator(NodeFeatureCalculator):
     def is_relevant(self):
         return True
 
@@ -15,13 +15,15 @@ class BfsMoments(NodeFeatureCalculator):
             # calculate BFS distances
             distances = nx.single_source_shortest_path_length(self._gnx, node)
             node_dist = Counter(distances.values())
-            dist = node_dist.values()
-            self._features[node] = [float(np.average(dist, weights=range(1, len(dist) + 1))), float(np.std(dist))]
+            dists, weights = zip(*node_dist.items())
+            self._features[node] = [float(np.average(weights, weights=dists)), float(np.std(weights))]
 
 
 feature_entry = {
-    "bfs_moments": FeatureMeta(BfsMoments, {"bfs"}),
+    "bfs_moments": FeatureMeta(BfsMomentsCalculator, {"bfs"}),
 }
 
+
 if __name__ == "__main__":
-    pass
+    from tests.specific_feature_test import test_specific_feature
+    test_specific_feature(BfsMomentsCalculator)

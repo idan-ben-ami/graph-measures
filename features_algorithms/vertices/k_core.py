@@ -8,7 +8,9 @@ class KCoreCalculator(NodeFeatureCalculator):
         return True
 
     def _calculate(self, include: set):
-        self._features = nx.core_number(self._gnx)
+        loopless_gnx = self._gnx.copy()
+        loopless_gnx.remove_edges_from(nx.selfloop_edges(loopless_gnx))
+        self._features = nx.core_number(loopless_gnx)
 
 
 feature_entry = {

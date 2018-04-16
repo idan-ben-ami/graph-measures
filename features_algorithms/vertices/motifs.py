@@ -4,6 +4,7 @@ from functools import partial
 from itertools import permutations, combinations, tee
 
 import networkx as nx
+import numpy as np
 from bitstring import BitArray
 
 from features_infra.feature_calculators import NodeFeatureCalculator, FeatureMeta
@@ -19,6 +20,8 @@ class MotifsNodeCalculator(NodeFeatureCalculator):
         self._level = level
         self._node_variations = {}
         self._all_motifs = None
+        self._print_name += "_%d" % (self._level,)
+        self._gnx = self._gnx.copy()
         self._load_variations()
 
     def is_relevant(self):
@@ -76,7 +79,7 @@ class MotifsNodeCalculator(NodeFeatureCalculator):
             visited_index += 1
 
         for n1 in neighbors:
-            last_neighbors = nx.all_neighbors(self._gnx, n1)
+            last_neighbors = list(nx.all_neighbors(self._gnx, n1))
             for n2 in last_neighbors:
                 if n2 in visited_vertices:
                     if visited_vertices[n1] < visited_vertices[n2]:
@@ -146,17 +149,27 @@ class MotifsNodeCalculator(NodeFeatureCalculator):
                 group_num = self._get_group_number(group)
                 motif_num = self._node_variations[group_num]
                 yield group, group_num, motif_num
-                self._gnx.remove_node(node)
+            print(node)
+            self._gnx.remove_node(node)
 
     def _update_nodes_group(self, group, motif_num):
         for node in group:
-            if node not in self._features:
-                self._features[node] = {motif_number: 0 for motif_number in self._all_motifs}
             self._features[node][motif_num] += 1
 
     def _calculate(self, include=None):
+        motif_counter = {motif_number: 0 for motif_number in self._all_motifs}
+        self._features = {node: motif_counter.copy() for node in self._gnx}
+        i = 0
         for group, group_num, motif_num in self._calculate_motif():
             self._update_nodes_group(group, motif_num)
+            i += 1
+            if i % 1000 == 0:
+                print(i)
+
+    def _get_feature(self, element):
+        all_motifs = self._all_motifs.difference(set([None]))
+        cur_feature = self._features[element]
+        return np.array([cur_feature[motif_num] for motif_num in sorted(all_motifs)])
 
 
 # consider ignoring node's data
@@ -172,7 +185,7 @@ class MotifsEdgeCalculator(MotifsNodeCalculator):
 
     def _calculate_motif_dictionaries(self):
         # calculating the node variations
-        super(MotifsEdgeCalculator, self)._calculate_motif_dictionaries()
+        super(MotifsEdgeCalculator, self)._load_variations_file()
         if not self._gnx.is_directed():
             # if graph is not directed, there is no use of edge variations
             return
@@ -199,11 +212,11 @@ class MotifsEdgeCalculator(MotifsNodeCalculator):
 
 
 def nth_nodes_motif(motif_level):
-    return partial(MotifsNodeCalculator, motif_level)
+    return partial(MotifsNodeCalculator, level=motif_level)
 
 
 def nth_edges_motif(motif_level):
-    return partial(MotifsNodeCalculator, motif_level)
+    return partial(MotifsNodeCalculator, level=motif_level)
 
 
 feature_node_entry = {
@@ -218,6 +231,7 @@ feature_edge_entry = {
 
 if __name__ == "__main__":
     from tests.specific_feature_test import test_specific_feature
+
     test_specific_feature(nth_edges_motif(3))
     test_specific_feature(nth_edges_motif(4))
 

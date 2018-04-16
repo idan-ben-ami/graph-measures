@@ -19,7 +19,7 @@ class AttractorBasinCalculator(NodeFeatureCalculator):
         ab_out_dist = {}
 
         # for each node we are calculating the the out and in distances for the other nodes in the graph
-        dists = weighted.all_pairs_dijkstra_path_length(self._gnx, len(self._gnx), weight='weight')
+        dists = dict(weighted.all_pairs_dijkstra_path_length(self._gnx, len(self._gnx), weight='weight'))
         for node in self._gnx:
             if node not in dists:
                 continue

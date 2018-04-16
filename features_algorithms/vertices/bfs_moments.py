@@ -14,6 +14,10 @@ class BfsMomentsCalculator(NodeFeatureCalculator):
         for node in self._gnx:
             # calculate BFS distances
             distances = nx.single_source_shortest_path_length(self._gnx, node)
+            distances.pop(node)
+            if not distances:
+                self._features[node] = [0., 0.]
+                continue
             node_dist = Counter(distances.values())
             dists, weights = zip(*node_dist.items())
             self._features[node] = [float(np.average(weights, weights=dists)), float(np.std(weights))]
@@ -22,7 +26,6 @@ class BfsMomentsCalculator(NodeFeatureCalculator):
 feature_entry = {
     "bfs_moments": FeatureMeta(BfsMomentsCalculator, {"bfs"}),
 }
-
 
 if __name__ == "__main__":
     from tests.specific_feature_test import test_specific_feature

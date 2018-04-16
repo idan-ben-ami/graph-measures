@@ -3,6 +3,7 @@ import pickle
 
 from multiprocessing import Process, Queue
 
+from features_infra.feature_calculators import FeatureCalculator
 from loggers import PrintLogger, EmptyLogger
 
 import networkx as nx
@@ -33,7 +34,7 @@ class Worker(Process):
 
 # object that calculates & holds a list of features of a graph.
 class GraphFeatures(dict):
-    def __init__(self, gnx, features, dir_path=".", logger=None):
+    def __init__(self, gnx, features, dir_path, logger=None):
         self._gnx = gnx
         self._base_dir = dir_path
         self._logger = EmptyLogger() if logger is None else logger
@@ -46,25 +47,29 @@ class GraphFeatures(dict):
                                              for name, meta in features.items()})
         #  if meta.abbr_set.union({name}).intersection(features)})
 
-    def _build_serially(self, include, force_build: bool = False):
+    def _build_serially(self, include, force_build: bool = False, dump_path: str = None):
         for name, feature in self.items():
             if force_build or not os.path.exists(self._feature_path(name)):
                 feature.build(include=include)
+                if dump_path is not None:
+                    self._dump_feature(name, feature, dump_path)
             else:
                 self._load_feature(name)
-                # obj = pickle.load(open(file_path, "rb"))
-                # obj.logger = self._logger
-                # self[name] = obj
 
     # a single process means it is calculated serially
-    def build(self, num_processes: int = 1, include: set = None):  # , exclude: set=None):
+    def build(self, num_processes: int = 1, include: set = None, should_dump: bool = False):  # , exclude: set=None):
         # if exclude is None:
         #     exclude = set()
         if include is None:
             include = set()
 
         if 1 == num_processes:
-            return self._build_serially(include)
+            dump_path = None
+            if should_dump:
+                dump_path = self._base_dir
+                if not os.path.exists(dump_path):
+                    os.makedirs(dump_path)
+            return self._build_serially(include, dump_path=dump_path)
 
         request_queue = Queue()
         workers = [Worker(request_queue, self, include, logger=self._logger) for _ in range(num_processes)]
@@ -85,9 +90,9 @@ class GraphFeatures(dict):
             worker.join()
 
     def _load_feature(self, name):
-        obj = pickle.load(open(self._feature_path(name), "rb"))
-        obj.logger = self._logger
-        self[name] = obj
+        feature = pickle.load(open(self._feature_path(name), "rb"))
+        feature.load_meta({name: getattr(self, name) for name in FeatureCalculator.META_VALUES})
+        self[name] = feature
         return self[name]
 
     def __getattr__(self, name):
@@ -119,6 +124,12 @@ class GraphFeatures(dict):
             dir_path = self._base_dir
         return os.path.join(dir_path, name + ".pkl")
 
+    def _dump_feature(self, name, feature, dir_path):
+        if feature.is_loaded:
+            prev_meta = feature.clean_meta()  # in order not to save unnecessary data
+            pickle.dump(feature, open(self._feature_path(name, dir_path), "wb"))
+            feature.load_meta(prev_meta)
+
     def dump(self, dir_path=None):
         if dir_path is None:
             dir_path = self._base_dir
@@ -127,32 +138,31 @@ class GraphFeatures(dict):
             os.makedirs(dir_path)
 
         for name, feature in self.items():
-            if not feature.is_loaded:
-                continue
-            feature.clean()  # in order not to save unnecessary data
-            pickle.dump(feature, open(self._feature_path(name, dir_path), "wb"))
+            self._dump_feature(name, feature, dir_path)
 
     # Should be implemented by request (_matrix is a cache)
     # def to_matrix(self):
     #     raise NotImplementedError()
 
-    def to_matrix(self, entries_order: list=None, add_ones=False, dtype=None, mtype=None):
+    def to_matrix(self, entries_order: list = None, add_ones=False, dtype=None, mtype=np.matrix):
         if self._matrix is not None:
             return self._matrix
 
         if entries_order is None:
             entries_order = sorted(self._gnx)
 
-        if mtype is None:
-            mtype = sparse.csr_matrix
-
         # Consider caching the matrix creation (if it takes long time)
         sorted_features = map(at(1), sorted(self.items(), key=at(0)))
+        sorted_features = [feature for feature in sorted_features if feature.is_relevant() and feature.is_loaded]
         # matrix = np.concatenate([feature.sparse_matrix() for feature in sorted_features], axis=1)  # 0: below, 1: near
-        mx = np.hstack([feature.to_matrix(entries_order, mtype=mtype) for feature in sorted_features])
-        if add_ones:
-            mx = np.hstack([mx, np.ones((mx.shape[0], 1))])
-        mx.astype(dtype)
+
+        if sorted_features:
+            mx = np.hstack([feature.to_matrix(entries_order, mtype=mtype) for feature in sorted_features])
+            if add_ones:
+                mx = np.hstack([mx, np.ones((mx.shape[0], 1))])
+            mx.astype(dtype)
+        else:
+            mx = np.matrix([])
 
         self._matrix = mtype(mx)
         return self._matrix

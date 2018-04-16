@@ -4,7 +4,7 @@ from features_infra.feature_calculators import NodeFeatureCalculator, FeatureMet
 
 
 class PageRankCalculator(NodeFeatureCalculator):
-    def __init__(self, alpha=0.9, *args, **kwargs):
+    def __init__(self, *args, alpha=0.9, **kwargs):
         super(PageRankCalculator, self).__init__(*args, **kwargs)
         self._alpha = alpha
 

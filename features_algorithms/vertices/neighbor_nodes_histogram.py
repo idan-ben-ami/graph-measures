@@ -63,7 +63,8 @@ class NthNeighborNodeHistogramCalculator(NodeFeatureCalculator):
                 self._features[node][full_type][neighbor_color] += 1
 
     def _get_feature(self, element):
-        return np.array([[self._features[element][r_type][x] for x in range(self._num_classes)]
+        cur_feature = self._features[element]
+        return np.array([[cur_feature[r_type][x] for x in range(self._num_classes)]
                          for r_type in self._relation_types]).flatten()
 
     # def _to_ndarray(self):

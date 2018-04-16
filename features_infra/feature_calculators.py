@@ -12,7 +12,7 @@ from collections import namedtuple
 def time_log(func):
     def wrapper(self, *args, **kwargs):
         start_time = datetime.now()
-        self._logger.debug("Start %s at %s" % (self._print_name, start_time,))
+        self._logger.debug("Start %s" % (self._print_name,))
         res = func(self, *args, **kwargs)
         cur_time = datetime.now()
         self._logger.debug("Finish %s at %s" % (self._print_name, cur_time - start_time,))
@@ -23,6 +23,8 @@ def time_log(func):
 
 
 class FeatureCalculator:
+    META_VALUES = ["_gnx", "_logger"]
+
     def __init__(self, gnx, logger=None):
         # super(FeatureCalculator, self).__init__()
         self._is_loaded = False
@@ -37,9 +39,16 @@ class FeatureCalculator:
     def is_relevant(self):
         raise NotImplementedError()
 
-    def clean(self):
-        self._gnx = None
-        self._logger = None
+    def clean_meta(self):
+        meta = {}
+        for name in type(self).META_VALUES:
+            meta[name] = getattr(self, name)
+            setattr(self, name, None)
+        return meta
+
+    def load_meta(self, meta):
+        for name, val in meta.items():
+            setattr(self, name, val)
 
     @classmethod
     def print_name(cls):

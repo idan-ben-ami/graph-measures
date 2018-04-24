@@ -76,9 +76,6 @@ TEST_FEATURES = {
     "load_centrality": FeatureMeta(LoadCentralityCalculator, {"load_c"}),
     "louvain": FeatureMeta(LouvainCalculator, {"lov"}),  # Undirected graphs
     "page_rank": FeatureMeta(PageRankCalculator, {"pr"}),
-}
-
-TEST_FEATURES2 = {
     "motif3": FeatureMeta(nth_nodes_motif(3), {"m3"}),
     "motif4": FeatureMeta(nth_nodes_motif(4), {"m4"}),
 }
@@ -90,12 +87,17 @@ def test_main():
     from loggers import PrintLogger
     import os
     import pickle
+    import networkx as nx
 
-    dataset = "cora"
+    dataset = "citeseer"
     logger = PrintLogger("MetaTest")
     base_dir = r"/home/benami/git/pygcn/data"
     gnx = pickle.load(open(os.path.join(base_dir, dataset, "gnx.pkl"), 'rb'))
-    features = GraphFeatures(gnx, TEST_FEATURES2, dir_path="./%s_features" % dataset, logger=logger)
+
+    max_subgnx = max(nx.connected_component_subgraphs(gnx.to_undirected()), key=len)
+    gnx = gnx.subgraph(max_subgnx)
+
+    features = GraphFeatures(gnx, TEST_FEATURES, dir_path="./%s_features_sub" % dataset, logger=logger)
     features.build(should_dump=True)
     measures_mx = features.to_matrix(add_ones=False, dtype=np.float32, mtype=np.matrix)
     logger.info("Finished")

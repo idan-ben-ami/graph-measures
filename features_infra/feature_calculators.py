@@ -2,11 +2,25 @@ import re
 from itertools import chain
 
 import numpy as np
-from scipy import sparse
+from scipy.stats import zscore
 from datetime import datetime
 
 from loggers import EmptyLogger
 from collections import namedtuple
+
+
+# Old zscore code.. should use scipy.stats.zscore
+def z_scoring(matrix):
+    new_matrix = np.asmatrix(matrix)
+    minimum = np.asarray(new_matrix.min(0))  # column wise
+    for i in range(minimum.shape[1]):
+        if minimum[0, i] > 0:
+            new_matrix[:, i] = np.log10(new_matrix[:, i])
+        elif minimum[0, i] == 0:
+            new_matrix[:, i] = np.log10(new_matrix[:, i] + 0.1)
+        if new_matrix[:, i].std() > 0:
+            new_matrix[:, i] = (new_matrix[:, i] - new_matrix[:, i].min()) / new_matrix[:, i].std()
+    return new_matrix
 
 
 def time_log(func):
@@ -80,10 +94,12 @@ class FeatureCalculator:
         raise NotImplementedError()
 
     # sparse.csr_matrix
-    def to_matrix(self, params_order: list = None, mtype=np.matrix):
+    def to_matrix(self, params_order: list = None, mtype=np.matrix, should_zscore: bool=True):
         mx = np.matrix([self._get_feature(element) for element in self._params_order(params_order)]).astype(np.float32)
         if 1 == mx.shape[0]:
             mx = mx.transpose()
+        if should_zscore:
+            mx = z_scoring(mx)  # , axis=0)
         return mtype(mx)
 
     # def __getattr__(self, item):

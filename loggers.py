@@ -39,11 +39,8 @@ class BaseLogger(logging.getLoggerClass()):
 
 
 class FileLogger(BaseLogger):
-    def __init__(self, filename, ext="log", path=None, add_timestamp=False, should_overwrite=True):
-        super(FileLogger, self).__init__()
-
-        if path is None:
-            path = "logs"
+    def __init__(self, filename, *args, ext="log", path="logs", add_timestamp=False, should_overwrite=True, **kwargs):
+        super(FileLogger, self).__init__(*args, **kwargs)
 
         if not os.path.exists(path):
             os.makedirs(path)
@@ -56,6 +53,18 @@ class FileLogger(BaseLogger):
 
         self.addHandler(logging.FileHandler("%s.%s" % (filename, ext,), mode=mode))
         self._initialize_handler()
+
+
+class CSVLogger(FileLogger):
+    def __init__(self, *args, **kwargs):
+        if "ext" not in kwargs:
+            kwargs["ext"] = "csv"
+        kwargs["log_format"] = "%(message)s"
+        self._delimiter = kwargs.pop("delimiter", ",")
+        super(CSVLogger, self).__init__(*args, **kwargs)
+
+    def info(self, *args):
+        super(CSVLogger, self).info(self._delimiter.join(map(str, args)))
 
 
 class PrintLogger(BaseLogger):
@@ -75,8 +84,8 @@ class EmptyLogger(BaseLogger):
         # self.disabled = True
 
 
-def multi_logger(loggers):
-    res = BaseLogger("MultiLogger")
+def multi_logger(loggers, name="MultiLogger"):
+    res = BaseLogger(name)
     for logger in loggers:
         for handler in logger.handlers:
             res.addHandler(handler)

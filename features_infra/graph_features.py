@@ -144,7 +144,8 @@ class GraphFeatures(dict):
     # def to_matrix(self):
     #     raise NotImplementedError()
 
-    def to_matrix(self, entries_order: list = None, add_ones=False, dtype=None, mtype=np.matrix):
+    def to_matrix(self, entries_order: list = None, add_ones=False, dtype=None, mtype=np.matrix,
+                  should_zscore: bool=True):
         if self._matrix is not None:
             return self._matrix
 
@@ -157,7 +158,8 @@ class GraphFeatures(dict):
         # matrix = np.concatenate([feature.sparse_matrix() for feature in sorted_features], axis=1)  # 0: below, 1: near
 
         if sorted_features:
-            mx = np.hstack([feature.to_matrix(entries_order, mtype=mtype) for feature in sorted_features])
+            mx = np.hstack([feature.to_matrix(entries_order, mtype=mtype, should_zscore=should_zscore)
+                            for feature in sorted_features])
             if add_ones:
                 mx = np.hstack([mx, np.ones((mx.shape[0], 1))])
             mx.astype(dtype)

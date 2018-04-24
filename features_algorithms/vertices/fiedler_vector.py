@@ -13,7 +13,10 @@ class FiedlerVector(NodeFeatureCalculator):
         self._features = {}
 
         for graph in nx.connected_component_subgraphs(self._gnx):
-            self._features.update(dict(zip(graph.nodes(), alg_connectivity.fiedler_vector(graph))))
+            if len(graph) < 2:
+                self._features.update(zip(graph.nodes(), [0] * len(graph)))
+            else:
+                self._features.update(zip(graph.nodes(), alg_connectivity.fiedler_vector(graph)))
 
     def is_relevant(self):
         # Fiedler vector also works only on connected undirected graphs

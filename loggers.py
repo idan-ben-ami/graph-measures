@@ -61,10 +61,13 @@ class CSVLogger(FileLogger):
             kwargs["ext"] = "csv"
         kwargs["log_format"] = "%(message)s"
         self._delimiter = kwargs.pop("delimiter", ",")
+        self._other_del = kwargs.pop("other_delimiter", "-")
         super(CSVLogger, self).__init__(*args, **kwargs)
 
     def info(self, *args):
-        super(CSVLogger, self).info(self._delimiter.join(map(str, args)))
+        args = [arg.replace(self._delimiter, self._other_del).replace(" ", "") if self._delimiter in arg else arg
+                for arg in map(str, args)]
+        super(CSVLogger, self).info(self._delimiter.join(args))
 
 
 class PrintLogger(BaseLogger):

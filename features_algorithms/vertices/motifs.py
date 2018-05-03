@@ -1,5 +1,6 @@
 import os
 import pickle
+import re
 from functools import partial
 from itertools import permutations, combinations, tee
 
@@ -26,6 +27,12 @@ class MotifsNodeCalculator(NodeFeatureCalculator):
 
     def is_relevant(self):
         return True
+
+    @classmethod
+    def print_name(cls, level=3):
+        return "motifs%d" % level
+        # name = super(MotifsNodeCalculator, cls).print_name()
+        # name.split("_")[0]
 
     def _load_variations_file(self):
         fname = "%d_%sdirected.pkl" % (self._level, "" if self._gnx.is_directed() else "un")
@@ -72,14 +79,14 @@ class MotifsNodeCalculator(NodeFeatureCalculator):
         visited_index = 1
 
         # variation == (1, 1)
-        first_neighbors = nx.all_neighbors(self._gnx, root)
-        neighbors, visited_neighbors = tee(first_neighbors)
-        for n1 in visited_neighbors:
+        first_neighbors = set(nx.all_neighbors(self._gnx, root))
+        # neighbors, visited_neighbors = tee(first_neighbors)
+        for n1 in first_neighbors:
             visited_vertices[n1] = visited_index
             visited_index += 1
 
-        for n1 in neighbors:
-            last_neighbors = list(nx.all_neighbors(self._gnx, n1))
+        for n1 in first_neighbors:
+            last_neighbors = set(nx.all_neighbors(self._gnx, n1))
             for n2 in last_neighbors:
                 if n2 in visited_vertices:
                     if visited_vertices[n1] < visited_vertices[n2]:
@@ -100,7 +107,7 @@ class MotifsNodeCalculator(NodeFeatureCalculator):
         # visited_index = 1
 
         # variation == (1, 1, 1)
-        neighbors_first_deg = nx.all_neighbors(self._gnx, root)
+        neighbors_first_deg = set(nx.all_neighbors(self._gnx, root))
         # neighbors_first_deg, visited_neighbors, len_a = tee(neighbors_first_deg, 3)
         neighbors_first_deg = visited_neighbors = list(neighbors_first_deg)
 
@@ -110,12 +117,12 @@ class MotifsNodeCalculator(NodeFeatureCalculator):
             yield [root, n1, n2, n3]
 
         for n1 in neighbors_first_deg:
-            neighbors_sec_deg = nx.all_neighbors(self._gnx, n1)
+            neighbors_sec_deg = set(nx.all_neighbors(self._gnx, n1))
             # neighbors_sec_deg, visited_neighbors, len_b = tee(neighbors_sec_deg, 3)
             neighbors_sec_deg = visited_neighbors = list(neighbors_sec_deg)
-            for n1 in visited_neighbors:
-                if n1 not in visited_vertices:
-                    visited_vertices[n1] = 2
+            for n in visited_neighbors:
+                if n not in visited_vertices:
+                    visited_vertices[n] = 2
             for n2 in neighbors_sec_deg:
                 for n11 in neighbors_first_deg:
                     if visited_vertices[n2] == 2 and n1 != n11:
@@ -126,7 +133,7 @@ class MotifsNodeCalculator(NodeFeatureCalculator):
                     yield [root, n1, comb[0], comb[1]]
 
             for n2 in neighbors_sec_deg:
-                for n3 in nx.all_neighbors(self._gnx, n2):
+                for n3 in set(nx.all_neighbors(self._gnx, n2)):
                     if n3 not in visited_vertices:
                         visited_vertices[n3] = 3
                         if visited_vertices[n2] == 2:
@@ -228,10 +235,12 @@ feature_edge_entry = {
 }
 
 if __name__ == "__main__":
-    from tests.specific_feature_test import test_specific_feature
+    from measure_tests.specific_feature_test import test_specific_feature
 
-    test_specific_feature(nth_edges_motif(3))
-    test_specific_feature(nth_edges_motif(4))
+    # Previous version contained a bug while counting twice sub-groups with double edges
+    # test_specific_feature(nth_edges_motif(3), is_max_connected=True)
+    test_specific_feature(nth_edges_motif(4), is_max_connected=True)
+
 
     # def _calculate_motif_dictionaries(self):
     #     motifs_edges_dict = {}

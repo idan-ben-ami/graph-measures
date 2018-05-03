@@ -26,7 +26,7 @@ class AttractorBasinCalculator(NodeFeatureCalculator):
 
             node_dists = dists[node]
             count_out_dist = Counter([node_dists.get(d) for d in nx.descendants(self._gnx, node)])
-            count_in_dist = Counter([node_dists.get(d) for d in nx.ancestors(self._gnx, node)])
+            count_in_dist = Counter([dists.get(d, {}).get(node) for d in nx.ancestors(self._gnx, node)])
             count_out_dist.pop(None, None)
             count_in_dist.pop(None, None)
 
@@ -45,7 +45,7 @@ class AttractorBasinCalculator(NodeFeatureCalculator):
             out_dist = ab_out_dist.get(node, {})
             in_dist = ab_in_dist.get(node, {})
 
-            self._features[node] = -1
+            self._features[node] = -1.
             denominator = sum((dist / avg_out[m]) * (self._alpha ** (-m)) for m, dist in out_dist.items())
             if 0 != denominator:
                 numerator = sum((dist / avg_in[m]) * (self._alpha ** (-m)) for m, dist in in_dist.items())
@@ -69,5 +69,5 @@ feature_entry = {
 
 
 if __name__ == "__main__":
-    from tests.specific_feature_test import test_specific_feature
-    test_specific_feature(AttractorBasinCalculator)
+    from measure_tests.specific_feature_test import test_specific_feature
+    test_specific_feature(AttractorBasinCalculator, is_max_connected=True)

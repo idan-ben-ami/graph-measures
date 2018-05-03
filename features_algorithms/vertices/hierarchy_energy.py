@@ -78,5 +78,5 @@ feature_entry = {
 }
 
 if __name__ == "__main__":
-    from tests.specific_feature_test import test_specific_feature
-    test_specific_feature(HierarchyEnergyCalculator)
+    from measure_tests.specific_feature_test import test_specific_feature
+    test_specific_feature(HierarchyEnergyCalculator, is_max_connected=True)

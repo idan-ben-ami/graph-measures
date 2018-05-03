@@ -14,9 +14,9 @@ class FiedlerVector(NodeFeatureCalculator):
 
         for graph in nx.connected_component_subgraphs(self._gnx):
             if len(graph) < 2:
-                self._features.update(zip(graph.nodes(), [0] * len(graph)))
+                self._features.update(zip(graph.nodes(), [0.] * len(graph)))
             else:
-                self._features.update(zip(graph.nodes(), alg_connectivity.fiedler_vector(graph)))
+                self._features.update(zip(graph.nodes(), map(float, alg_connectivity.fiedler_vector(graph))))
 
     def is_relevant(self):
         # Fiedler vector also works only on connected undirected graphs
@@ -31,5 +31,5 @@ feature_entry = {
 
 
 if __name__ == "__main__":
-    from tests.specific_feature_test import test_specific_feature
-    test_specific_feature(FiedlerVector)
+    from measure_tests.specific_feature_test import test_specific_feature
+    test_specific_feature(FiedlerVector, is_max_connected=True)

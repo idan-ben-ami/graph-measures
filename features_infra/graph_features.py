@@ -34,11 +34,19 @@ class Worker(Process):
 
 # object that calculates & holds a list of features of a graph.
 class GraphFeatures(dict):
-    def __init__(self, gnx, features, dir_path, logger=None):
-        self._gnx = gnx
+    def __init__(self, gnx, features, dir_path, logger=None, max_connected=False):
         self._base_dir = dir_path
         self._logger = EmptyLogger() if logger is None else logger
         self._matrix = None
+
+        if max_connected:
+            if gnx.is_directed():
+                subgraphs = nx.weakly_connected_component_subgraphs(gnx)
+            else:
+                subgraphs = nx.connected_component_subgraphs(gnx)
+            self._gnx = max(subgraphs, key=len)
+        else:
+            self._gnx = gnx
 
         self._abbreviations = {abbr: name for name, meta in features.items() for abbr in meta.abbr_set}
 
@@ -47,7 +55,13 @@ class GraphFeatures(dict):
                                              for name, meta in features.items()})
         #  if meta.abbr_set.union({name}).intersection(features)})
 
+    @property
+    def graph(self):
+        return self._gnx
+
     def _build_serially(self, include, force_build: bool = False, dump_path: str = None):
+        if dump_path is not None and self._gnx is not None:
+            pickle.dump(self._gnx, open(self._feature_path("gnx", dump_path), "wb"))
         for name, feature in self.items():
             if force_build or not os.path.exists(self._feature_path(name)):
                 feature.build(include=include)
@@ -90,6 +104,9 @@ class GraphFeatures(dict):
             worker.join()
 
     def _load_feature(self, name):
+        if self._gnx is None:
+            assert os.path.exists(self._feature_path("gnx")), "Graph is not present in the given directory"
+            self._gnx = pickle.load(open(self._feature_path("gnx"), "rb"))
         feature = pickle.load(open(self._feature_path(name), "rb"))
         feature.load_meta({name: getattr(self, name) for name in FeatureCalculator.META_VALUES})
         self[name] = feature
@@ -140,22 +157,15 @@ class GraphFeatures(dict):
         for name, feature in self.items():
             self._dump_feature(name, feature, dir_path)
 
-    # Should be implemented by request (_matrix is a cache)
-    # def to_matrix(self):
-    #     raise NotImplementedError()
-
+    # sparse.csr_matrix(matrix, dtype=np.float32)
     def to_matrix(self, entries_order: list = None, add_ones=False, dtype=None, mtype=np.matrix,
-                  should_zscore: bool=True):
-        if self._matrix is not None:
-            return self._matrix
-
+                  should_zscore: bool = True):
         if entries_order is None:
             entries_order = sorted(self._gnx)
 
-        # Consider caching the matrix creation (if it takes long time)
         sorted_features = map(at(1), sorted(self.items(), key=at(0)))
+        # Consider caching the matrix creation (if it takes long time)
         sorted_features = [feature for feature in sorted_features if feature.is_relevant() and feature.is_loaded]
-        # matrix = np.concatenate([feature.sparse_matrix() for feature in sorted_features], axis=1)  # 0: below, 1: near
 
         if sorted_features:
             mx = np.hstack([feature.to_matrix(entries_order, mtype=mtype, should_zscore=should_zscore)
@@ -166,9 +176,11 @@ class GraphFeatures(dict):
         else:
             mx = np.matrix([])
 
-        self._matrix = mtype(mx)
-        return self._matrix
-        # return sparse.csr_matrix(matrix, dtype=np.float32)
+        return mtype(mx)
+
+    def to_dict(self, dtype=None, should_zscore: bool = True):
+        mx = self.to_matrix(dtype=dtype, mtype=np.matrix, should_zscore=should_zscore)
+        return {node: mx[i, :] for i, node in enumerate(sorted(self._gnx))}
 
 
 # class GraphNodeFeatures(GraphFeatures):

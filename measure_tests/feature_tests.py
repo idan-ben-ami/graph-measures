@@ -1,6 +1,6 @@
 import unittest
 
-from tests.specific_feature_test import SpecificFeatureTest
+from measure_tests.specific_feature_test import SpecificFeatureTest
 from features_algorithms.vertices.attractor_basin import AttractorBasinCalculator
 from features_algorithms.vertices.average_neighbor_degree import AverageNeighborDegreeCalculator
 from features_algorithms.vertices.bfs_moments import BfsMomentsCalculator

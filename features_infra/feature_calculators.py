@@ -1,12 +1,13 @@
 import re
+from collections import namedtuple
+from datetime import datetime
 from itertools import chain
 
+import networkx as nx
 import numpy as np
-from scipy.stats import zscore
-from datetime import datetime
+# from scipy.stats import zscore
 
 from loggers import EmptyLogger
-from collections import namedtuple
 
 
 # Old zscore code.. should use scipy.stats.zscore
@@ -43,7 +44,6 @@ class FeatureCalculator:
         # super(FeatureCalculator, self).__init__()
         self._is_loaded = False
         self._features = {}
-        # self._abbr_set = abbr_set
         self._logger = EmptyLogger() if logger is None else logger
         self._gnx = gnx
         self._print_name = self.print_name()

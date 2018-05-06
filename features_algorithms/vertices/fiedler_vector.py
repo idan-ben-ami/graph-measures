@@ -4,7 +4,7 @@ import networkx.linalg.algebraicconnectivity as alg_connectivity
 from features_infra.feature_calculators import NodeFeatureCalculator, FeatureMeta
 
 
-class FiedlerVector(NodeFeatureCalculator):
+class FiedlerVectorCalculator(NodeFeatureCalculator):
     def _calculate_dep(self, include: set):
         # Working on every connected component by itself
         self._features = dict(zip(self._gnx, alg_connectivity.fiedler_vector(self._gnx)))
@@ -26,10 +26,10 @@ class FiedlerVector(NodeFeatureCalculator):
 
 
 feature_entry = {
-    "fiedler_vector": FeatureMeta(FiedlerVector, {"fv"}),
+    "fiedler_vector": FeatureMeta(FiedlerVectorCalculator, {"fv"}),
 }
 
 
 if __name__ == "__main__":
     from measure_tests.specific_feature_test import test_specific_feature
-    test_specific_feature(FiedlerVector, is_max_connected=True)
+    test_specific_feature(FiedlerVectorCalculator, is_max_connected=True)

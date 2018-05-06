@@ -23,4 +23,4 @@ feature_entry = {
 
 if __name__ == "__main__":
     from measure_tests.specific_feature_test import test_specific_feature
-    test_specific_feature(PageRankCalculator)
+    test_specific_feature(PageRankCalculator, is_max_connected=True)

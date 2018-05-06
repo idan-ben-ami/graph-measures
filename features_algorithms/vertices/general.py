@@ -7,7 +7,7 @@ class GeneralCalculator(NodeFeatureCalculator):
 
     def _calculate(self, include: set):
         if self._gnx.is_directed():
-            self._features = {node: (out_deg, in_deg) for
+            self._features = {node: (in_deg, out_deg) for
                               (node, out_deg), (_, in_deg) in zip(self._gnx.out_degree(), self._gnx.in_degree())}
         else:
             self._features = {node: deg for node, deg in self._gnx.degree()}

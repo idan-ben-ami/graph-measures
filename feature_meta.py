@@ -6,7 +6,7 @@ from features_algorithms.vertices.closeness_centrality import ClosenessCentralit
 from features_algorithms.vertices.communicability_betweenness_centrality import \
     CommunicabilityBetweennessCentralityCalculator
 from features_algorithms.vertices.eccentricity import EccentricityCalculator
-from features_algorithms.vertices.fiedler_vector import FiedlerVector
+from features_algorithms.vertices.fiedler_vector import FiedlerVectorCalculator
 from features_algorithms.vertices.flow import FlowCalculator
 from features_algorithms.vertices.general import GeneralCalculator
 from features_algorithms.vertices.hierarchy_energy import HierarchyEnergyCalculator
@@ -27,7 +27,7 @@ NODE_FEATURES = {
     "communicability_betweenness_centrality": FeatureMeta(CommunicabilityBetweennessCentralityCalculator,
                                                           {"communicability"}),
     "eccentricity": FeatureMeta(EccentricityCalculator, {"ecc"}),
-    "fiedler_vector": FeatureMeta(FiedlerVector, {"fv"}),
+    "fiedler_vector": FeatureMeta(FiedlerVectorCalculator, {"fv"}),
     "flow": FeatureMeta(FlowCalculator, {}),
     "general": FeatureMeta(GeneralCalculator, {"gen"}),
     "hierarchy_energy": FeatureMeta(HierarchyEnergyCalculator, {"hierarchy"}),
@@ -68,7 +68,7 @@ TEST_FEATURES = {
     "communicability_betweenness_centrality": FeatureMeta(CommunicabilityBetweennessCentralityCalculator,
                                                           {"communicability"}),
     "eccentricity": FeatureMeta(EccentricityCalculator, {"ecc"}),
-    "fiedler_vector": FeatureMeta(FiedlerVector, {"fv"}),  # Undirected graphs
+    "fiedler_vector": FeatureMeta(FiedlerVectorCalculator, {"fv"}),  # Undirected graphs
     "flow": FeatureMeta(FlowCalculator, {}),
     "general": FeatureMeta(GeneralCalculator, {"gen"}),
     "hierarchy_energy": FeatureMeta(HierarchyEnergyCalculator, {"hierarchy"}),

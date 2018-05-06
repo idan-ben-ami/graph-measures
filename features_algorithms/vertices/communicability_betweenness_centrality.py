@@ -5,7 +5,7 @@ from features_infra.feature_calculators import NodeFeatureCalculator, FeatureMet
 
 class CommunicabilityBetweennessCentralityCalculator(NodeFeatureCalculator):
     def _calculate(self, include: set):
-        self._features = nx.communicability_betweenness_centrality(self._gnx.to_undirected())
+        self._features = nx.communicability_betweenness_centrality(self._gnx)
 
     def is_relevant(self):
         return not self._gnx.is_directed()

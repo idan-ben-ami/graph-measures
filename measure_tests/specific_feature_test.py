@@ -1,38 +1,45 @@
 import unittest
 
+import logging
 import networkx as nx
 
+from loggers import PrintLogger, EmptyLogger
 from measure_tests.test_graph import TestData
 
+iterable_types = [list, tuple]
+num_types = [int, float]
 
-class SpecificFeatureTest(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls._test_data = TestData()
 
-    def _test_feature(self, feature_cls, is_directed):
-        gnx = self._test_data.get_graph(is_directed=is_directed)
-        feature = feature_cls(gnx)
-        test_res = feature.build()
-        test_res = {item: [val] if not isinstance(val, list) else val for item, val in test_res.items()}
+def compare_type(res1, res2):
+    return (type(res1) == type(res2)) or \
+           (type(res1) in iterable_types and type(res2) in iterable_types) or \
+           (type(res1) in num_types and type(res2) in num_types)
 
-        true_res = self._test_data.load_feature(feature_cls, is_directed=is_directed)
-        common = set(test_res).intersection(true_res)
-        for item in common:
-            for x, y in zip(test_res[item], true_res[item]):
-                self.assertAlmostEqual(x, y, 5)
 
-        test_diff = set(test_res).difference(true_res)
-        true_diff = set(true_res).difference(test_res)
-
-        # for i in range(1, 17):
-        #     tst = "miss"
-        #     tru = "miss"
-        #     if str(i) in test_res:
-        #         tst = test_res[str(i)]
-        #     if str(i) in true_result:
-        #         tru = true_result[str(i)]
-        #     print("node " + str(i) + "\ttrue: " + str(tru) + "\t||\ttest: " + str(tst) + "\n")
+def are_results_equal(res1, res2):
+    if res1 == res2:
+        return True
+    if not compare_type(res1, res2):
+        return False
+    if type(res1) in num_types:
+        ngidits = 5
+        if round(res1, ngidits) != round(res2, ngidits):
+            return False
+    elif isinstance(res1, dict):
+        if res1.keys() != res2.keys():
+            return False
+        for key, val1 in res1.items():
+            if not are_results_equal(val1, res2[key]):
+                return False
+    elif type(res1) in iterable_types:
+        if len(res1) != len(res2):
+            return False
+        for val1, val2 in zip(res1, res2):
+            if not are_results_equal(val1, val2):
+                return False
+    else:
+        assert False, "Unknown type"
+    return True
 
 
 def get_di_graph():
@@ -62,59 +69,44 @@ def filter_gnx(gnx, is_max_connected=False):
     return max(subgraphs, key=len)
 
 
-def calculate_test_feature(calculator, is_max_connected=False):
-    from loggers import PrintLogger
-    logger = PrintLogger("TestLogger")
-    res = {}
-    for g_type, gnx in [("directed", get_di_graph()), ("undirected", get_graph())]:
+class SpecificFeatureTest(unittest.TestCase):
+    logger = EmptyLogger()
+
+    @classmethod
+    def setUpClass(cls):
+        cls._test_data = TestData(logger=cls.logger)
+
+    def _test_feature(self, feature_cls, is_directed, is_max_connected=True):
+        gnx = get_di_graph() if is_directed else get_graph()
         gnx = filter_gnx(gnx, is_max_connected)
-        feat = calculator(gnx, logger=logger)
-        res[g_type] = feat.build()
-    return res
+        feature = feature_cls(gnx, logger=self.logger)
+        res = feature.build()
+
+        prev_res = self._test_data.load_feature(feature_cls, is_directed)
+        if prev_res is not None or feature.is_relevant():
+            self.assertTrue(are_results_equal(res, prev_res))
 
 
-def are_results_equal(res1, res2):
-    if type(res1) != type(res2):
-        return False
-    if res1 == res2:
-        return True
-    if isinstance(res1, float) or isinstance(res1, int):
-        ngidits = 5
-        if round(res1, ngidits) != round(res2, ngidits):
-            return False
-    elif isinstance(res1, dict):
-        if res1.keys() != res2.keys():
-            return False
-        for key, val1 in res1.items():
-            if not are_results_equal(val1, res2[key]):
-                return False
-    elif isinstance(res1, list) or isinstance(res1, tuple):
-        if len(res1) != len(res2):
-            return False
-        for val1, val2 in zip(res1, res2):
-            if not are_results_equal(val1, val2):
-                return False
-    else:
-        assert False, "Unknown type"
-
-    return True
-
-
-def test_specific_feature(feature_cls, is_max_connected=False):
-    res = calculate_test_feature(feature_cls, is_max_connected=is_max_connected)
-    test_data = TestData()
-    prev_res = {g_type: test_data.load_feature(feature_cls, g_type == "directed")
-                for g_type in ["directed", "undirected"]}
-    if prev_res["directed"] is not None:
-        directed_equal = are_results_equal(res['directed'], prev_res['directed'])
-        print("Directed graph are %sequal" % ("" if directed_equal else "not "))
-    if prev_res["undirected"] is not None:
-        undirected_equal = are_results_equal(res['undirected'], prev_res['undirected'])
-        print("UnDirected graph are %sequal" % ("" if undirected_equal else "not "))
-    # if directed_equal and undirected_equal:
-    #     print(" *** Both directed and undirected are equal! *** ")
-    print("Finished")
+# def test_specific_feature(feature_cls):
+#     self._test_feature(feature_cls, True)
+#     self._test_feature(feature_cls, False)
 
 
 if __name__ == '__main__':
     unittest.main()
+
+
+# def _test_feature1(self, feature_cls, is_directed):
+#     gnx = self._test_data.get_graph(is_directed=is_directed)
+#     feature = feature_cls(gnx)
+#     test_res = feature.build()
+#     test_res = {item: [val] if not isinstance(val, list) else val for item, val in test_res.items()}
+#
+#     true_res = self._test_data.load_feature(feature_cls, is_directed=is_directed)
+#     common = set(test_res).intersection(true_res)
+#     for item in common:
+#         for x, y in zip(test_res[item], true_res[item]):
+#             self.assertAlmostEqual(x, y, 5)
+#
+#     test_diff = set(test_res).difference(true_res)
+#     true_diff = set(true_res).difference(test_res)

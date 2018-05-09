@@ -54,12 +54,28 @@ class FeatureTests(SpecificFeatureTest):
         self._test_feature(EccentricityCalculator, False)
 
     def test_fiedler_vector(self):
-        self._test_feature(FiedlerVectorCalculator, True)
-        self._test_feature(FiedlerVectorCalculator, False)
+        self._test_feature(FiedlerVectorCalculator, True, should_abs=True)
+        self._test_feature(FiedlerVectorCalculator, False, should_abs=True)
 
-    @unittest.skip("Not implemented yet")
     def test_flow(self):
-        self._test_feature(FlowCalculator, True)
+        # Previous version contained a bug:
+        # In each node, the sum was divided by (max_b_u + 1) and not by the b_u of the specific node.
+        # Though the bug is small, it's effect is major on the significance of the flow feature.
+        b_u = {2: 10, 3: 9, 4: 9, 5: 10, 6: 3, 7: 8, 8: 4, 9: 1, 10: 8, 11: 8, 13: 8, 14: 8}
+        d_u_v = {2: [1, 1, 0, 1, 1, 1, 0, 1, 4/5, 1, 1],
+                 3: [0, 1, 0, 0, 1, 1, 0, 1, 3/4, 1, 1],
+                 4: [0, 0, 0, 0, 1, 1, 0, 1, 2/3, 1, 1],
+                 5: [1, 1, 1, 1, 1, 1, 0, 1, 5/6, 1, 1],
+                 6: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                 7: [0, 0, 0, 0, 0, 0, 0, 1, 1/2, 1, 1],
+                 8: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                 9: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                 10: [0, 0, 0, 0, 0, 1/2, 0, 0, 1, 1, 1],
+                 11: [0, 0, 0, 0, 0, 1, 0, 0, 1/2, 2/3, 2/3],
+                 13: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                 14: [0, 0, 0, 0, 0, 2/3, 0, 0, 1, 1, 1]}
+        res = {n: sum(d_u_v[n]) / b_u[n] for n in b_u}
+        self._test_feature(FlowCalculator, True, manual=res)
         self._test_feature(FlowCalculator, False)
 
     def test_general(self):
@@ -85,9 +101,14 @@ class FeatureTests(SpecificFeatureTest):
         self._test_feature(LouvainCalculator, False)
 
     @unittest.skip("Not implemented yet")
-    def test_motifs(self):
+    def test_motifs3(self):
         self._test_feature(nth_edges_motif(3), True)
         self._test_feature(nth_edges_motif(3), False)
+
+    @unittest.skip("Not implemented yet")
+    def test_motifs4(self):
+        self._test_feature(nth_edges_motif(4), True)
+        self._test_feature(nth_edges_motif(4), False)
 
     def test_page_rank(self):
         self._test_feature(PageRankCalculator, True)

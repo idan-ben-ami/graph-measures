@@ -50,3 +50,20 @@ class TestData:
         df = pd.read_csv(feature_path, header=None)
         res = {int(row[0]): list(map(float, row[1:])) if df.shape[1] > 2 else float(row[1]) for _, row in df.iterrows()}
         return self._specific_feature_processing(feature_name, res)
+
+
+def get_di_graph():
+    gnx = nx.DiGraph()
+    gnx.add_edges_from([(12, 1), (1, 12), (2, 3), (3, 4), (5, 2), (2, 6), (4, 7),
+                        (4, 8), (9, 6), (7, 10), (11, 7), (10, 11), (10, 13), (10, 14),
+                        (14, 10), (15, 12), (12, 16), (16, 12), (16, 15)])
+    # gnx.add_edges_from([(1, 2), (2, 4), (3, 1), (3, 4)])
+    return gnx
+
+
+def get_graph():
+    gnx = nx.Graph()
+    gnx.add_edges_from([(1, 2), (2, 3), (3, 4), (3, 7), (4, 8), (5, 6), (7, 8),
+                        (5, 10), (7, 10), (7, 11), (11, 12), (10, 13), (9, 14),
+                        (11, 15), (15, 16)])
+    return gnx

@@ -1,62 +1,46 @@
 import unittest
+import numpy as np
 
-import logging
 import networkx as nx
 
-from loggers import PrintLogger, EmptyLogger
-from measure_tests.test_graph import TestData
+from loggers import EmptyLogger
+from measure_tests.test_graph import TestData, get_di_graph, get_graph
 
-iterable_types = [list, tuple]
-num_types = [int, float]
+iterable_types = (list, tuple)
+num_types = (int, float, np.int8, np.int16, np.int32, np.int64, np.float16, np.float32, np.float64)
 
 
 def compare_type(res1, res2):
     return (type(res1) == type(res2)) or \
-           (type(res1) in iterable_types and type(res2) in iterable_types) or \
-           (type(res1) in num_types and type(res2) in num_types)
+           (isinstance(res1, iterable_types) and isinstance(res2, iterable_types)) or \
+           (isinstance(res1, num_types) and isinstance(res2, num_types))
 
 
-def are_results_equal(res1, res2):
+def are_results_equal(res1, res2, should_abs=False, ndigits=5):
     if res1 == res2:
         return True
     if not compare_type(res1, res2):
         return False
-    if type(res1) in num_types:
-        ngidits = 5
-        if round(res1, ngidits) != round(res2, ngidits):
+    if isinstance(res1, num_types):
+        if should_abs:
+            res1, res2 = abs(res1), abs(res2)
+        if round(res1, ndigits) != round(res2, ndigits):
             return False
     elif isinstance(res1, dict):
         if res1.keys() != res2.keys():
             return False
         for key, val1 in res1.items():
-            if not are_results_equal(val1, res2[key]):
+            if not are_results_equal(val1, res2[key], should_abs=should_abs, ndigits=ndigits):
                 return False
-    elif type(res1) in iterable_types:
+    elif isinstance(res1, iterable_types):
         if len(res1) != len(res2):
             return False
         for val1, val2 in zip(res1, res2):
-            if not are_results_equal(val1, val2):
+            if not are_results_equal(val1, val2, should_abs=should_abs, ndigits=ndigits):
                 return False
     else:
         assert False, "Unknown type"
     return True
-
-
-def get_di_graph():
-    gnx = nx.DiGraph()
-    gnx.add_edges_from([(12, 1), (1, 12), (2, 3), (3, 4), (5, 2), (2, 6), (4, 7),
-                        (4, 8), (9, 6), (7, 10), (11, 7), (10, 11), (10, 13), (10, 14),
-                        (14, 10), (15, 12), (12, 16), (16, 12), (16, 15)])
-    # gnx.add_edges_from([(1, 2), (2, 4), (3, 1), (3, 4)])
-    return gnx
-
-
-def get_graph():
-    gnx = nx.Graph()
-    gnx.add_edges_from([(1, 2), (2, 3), (3, 4), (3, 7), (4, 8), (5, 6), (7, 8),
-                        (5, 10), (7, 10), (7, 11), (11, 12), (10, 13), (9, 14),
-                        (11, 15), (15, 16)])
-    return gnx
 
 
 def filter_gnx(gnx, is_max_connected=False):
@@ -76,15 +60,20 @@ class SpecificFeatureTest(unittest.TestCase):
     def setUpClass(cls):
         cls._test_data = TestData(logger=cls.logger)
 
-    def _test_feature(self, feature_cls, is_directed, is_max_connected=True):
+    def _test_feature(self, feature_cls, is_directed, is_max_connected=True, manual=None, **cmp_features):
         gnx = get_di_graph() if is_directed else get_graph()
         gnx = filter_gnx(gnx, is_max_connected)
         feature = feature_cls(gnx, logger=self.logger)
         res = feature.build()
-
-        prev_res = self._test_data.load_feature(feature_cls, is_directed)
+        # mx_res = feature.to_matrix()
+        if manual is None:
+            prev_res = self._test_data.load_feature(feature_cls, is_directed)
+        else:
+            prev_res = manual
         if prev_res is not None or feature.is_relevant():
-            self.assertTrue(are_results_equal(res, prev_res))
+            if not are_results_equal(res, prev_res, **cmp_features):
+                are_results_equal(res, prev_res, **cmp_features)
+            self.assertTrue(are_results_equal(res, prev_res, **cmp_features))
 
 
 # def test_specific_feature(feature_cls):

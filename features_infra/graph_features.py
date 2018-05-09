@@ -34,12 +34,12 @@ class Worker(Process):
 
 # object that calculates & holds a list of features of a graph.
 class GraphFeatures(dict):
-    def __init__(self, gnx, features, dir_path, logger=None, max_connected=False):
+    def __init__(self, gnx, features, dir_path, logger=None, is_max_connected=False):
         self._base_dir = dir_path
         self._logger = EmptyLogger() if logger is None else logger
         self._matrix = None
 
-        if max_connected:
+        if is_max_connected:
             if gnx.is_directed():
                 subgraphs = nx.weakly_connected_component_subgraphs(gnx)
             else:

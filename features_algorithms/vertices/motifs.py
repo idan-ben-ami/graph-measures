@@ -1,8 +1,7 @@
 import os
 import pickle
-import re
 from functools import partial
-from itertools import permutations, combinations, tee
+from itertools import permutations, combinations
 
 import networkx as nx
 import numpy as np
@@ -12,6 +11,7 @@ from features_infra.feature_calculators import NodeFeatureCalculator, FeatureMet
 
 CUR_PATH = os.path.realpath(__file__)
 BASE_PATH = os.path.dirname(os.path.dirname(CUR_PATH))
+VERBOSE = False
 
 
 class MotifsNodeCalculator(NodeFeatureCalculator):
@@ -156,7 +156,8 @@ class MotifsNodeCalculator(NodeFeatureCalculator):
                 group_num = self._get_group_number(group)
                 motif_num = self._node_variations[group_num]
                 yield group, group_num, motif_num
-            self._logger.debug("Finished node: %s" % node)
+            if VERBOSE:
+                self._logger.debug("Finished node: %s" % node)
             self._gnx.remove_node(node)
 
     def _update_nodes_group(self, group, motif_num):
@@ -168,7 +169,7 @@ class MotifsNodeCalculator(NodeFeatureCalculator):
         self._features = {node: motif_counter.copy() for node in self._gnx}
         for i, (group, group_num, motif_num) in enumerate(self._calculate_motif()):
             self._update_nodes_group(group, motif_num)
-            if (i + 1) % 1000 == 0:
+            if (i + 1) % 1000 == 0 and VERBOSE:
                 self._logger.debug("Groups: %d" % i)
 
     def _get_feature(self, element):

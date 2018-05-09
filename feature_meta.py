@@ -18,31 +18,46 @@ from features_algorithms.vertices.motifs import nth_nodes_motif
 from features_algorithms.vertices.page_rank import PageRankCalculator
 from features_infra.feature_calculators import FeatureMeta, FeatureCalculator
 
+
 NODE_FEATURES = {
+    # Passed
     "attractor_basin": FeatureMeta(AttractorBasinCalculator, {"ab"}),
     "average_neighbor_degree": FeatureMeta(AverageNeighborDegreeCalculator, {"avg_nd"}),
     "betweenness_centrality": FeatureMeta(BetweennessCentralityCalculator, {"betweenness"}),
     "bfs_moments": FeatureMeta(BfsMomentsCalculator, {"bfs"}),
+
+    # Didn't pass - but no logic
     "closeness_centrality": FeatureMeta(ClosenessCentralityCalculator, {"closeness"}),
-    "communicability_betweenness_centrality": FeatureMeta(CommunicabilityBetweennessCentralityCalculator,
-                                                          {"communicability"}),
+    # "communicability_betweenness_centrality": FeatureMeta(CommunicabilityBetweennessCentralityCalculator,
+    #                                                       {"communicability"}),
+
+    # Passed
     "eccentricity": FeatureMeta(EccentricityCalculator, {"ecc"}),
     "fiedler_vector": FeatureMeta(FiedlerVectorCalculator, {"fv"}),
+
+    # Previous version bug
     "flow": FeatureMeta(FlowCalculator, {}),
+    # Passed
     "general": FeatureMeta(GeneralCalculator, {"gen"}),
-    "hierarchy_energy": FeatureMeta(HierarchyEnergyCalculator, {"hierarchy"}),
+
+    # Isn't OK - also in previous version
+    # "hierarchy_energy": FeatureMeta(HierarchyEnergyCalculator, {"hierarchy"}),
+
+    # Passed
     "k_core": FeatureMeta(KCoreCalculator, {"kc"}),
     "load_centrality": FeatureMeta(LoadCentralityCalculator, {"load_c"}),
+
+    # Didn't pass - but no logic
     "louvain": FeatureMeta(LouvainCalculator, {"lov"}),
-    "page_rank": FeatureMeta(PageRankCalculator, {"pr"}),
+
+    # Previous version bug
     "motif3": FeatureMeta(nth_nodes_motif(3), {"m3"}),
-    "motif4": FeatureMeta(nth_nodes_motif(4), {"m4"}),
+
+    # Passed
+    "page_rank": FeatureMeta(PageRankCalculator, {"pr"}),
+    # "motif4": FeatureMeta(nth_nodes_motif(4), {"m4"}),
     # "first_neighbor_histogram": FeatureMeta(nth_neighbor_calculator(1), {"fnh", "first_neighbor"}),
     # "second_neighbor_histogram": FeatureMeta(nth_neighbor_calculator(2), {"snh", "second_neighbor"}),
-}
-
-EDGE_FEATURES = {
-    "feat_name": FeatureMeta(FeatureCalculator, {"abbr1", "abbr2"}),
 }
 
 GRAPH_FEATURES = {
@@ -51,7 +66,7 @@ GRAPH_FEATURES = {
 
 ALL_FEATURES = {
     "node": NODE_FEATURES,
-    "edges": EDGE_FEATURES,
+    # "edges": EDGE_FEATURES,
     "graph": GRAPH_FEATURES,
 }
 

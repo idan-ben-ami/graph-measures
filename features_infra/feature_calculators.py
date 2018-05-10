@@ -64,6 +64,9 @@ class FeatureCalculator:
         for name, val in meta.items():
             setattr(self, name, val)
 
+    def _is_meta_loaded(self):
+        return any(getattr(self, name) is not None for name in self.META_VALUES)
+
     @classmethod
     def print_name(cls):
         split_name = re.findall("[A-Z][^A-Z]*", cls.__name__)
@@ -109,7 +112,9 @@ class FeatureCalculator:
 
     def __repr__(self):
         status = "loaded" if self.is_loaded else "not loaded"
-        if not self.is_relevant():
+        if not self._is_meta_loaded():
+            status = "no_meta"
+        elif not self.is_relevant():
             status = "irrelevant"
         return "<Feature %s: %s>" % (self._print_name, status,)
 

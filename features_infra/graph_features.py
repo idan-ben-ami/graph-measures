@@ -51,9 +51,8 @@ class GraphFeatures(dict):
         self._abbreviations = {abbr: name for name, meta in features.items() for abbr in meta.abbr_set}
 
         # building the feature calculators data structure
-        super(GraphFeatures, self).__init__({name: meta.calculator(gnx, logger=logger)
+        super(GraphFeatures, self).__init__({name: meta.calculator(self._gnx, logger=logger)
                                              for name, meta in features.items()})
-        #  if meta.abbr_set.union({name}).intersection(features)})
 
     @property
     def graph(self):

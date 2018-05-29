@@ -5,6 +5,10 @@ from sklearn.manifold import Isomap
 from features_infra.feature_calculators import NodeFeatureCalculator, FeatureMeta
 
 
+MAX_DEGREE = 5
+COMPONENT_SIZE = 20
+
+
 class MultiDimensionalScalingCalculator(NodeFeatureCalculator):
     def is_relevant(self):
         return True
@@ -15,7 +19,8 @@ class MultiDimensionalScalingCalculator(NodeFeatureCalculator):
             nodes_order = sorted(graph)
             dissimilarities = self._dissimilarity(graph, nodes_order)
             min_degrees = min(graph.degree(), key=lambda x: x[1])[1]  # [deg for node, deg in graph.degree()])
-            isomap_mx = Isomap(n_neighbors=min(min_degrees, 10), n_components=6).fit_transform(dissimilarities)
+            isomap_mx = Isomap(n_neighbors=min(min_degrees, MAX_DEGREE),
+                               n_components=COMPONENT_SIZE).fit_transform(dissimilarities)
             self._features.update(zip(nodes_order, isomap_mx))
 
     @staticmethod

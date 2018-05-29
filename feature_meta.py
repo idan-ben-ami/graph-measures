@@ -55,7 +55,7 @@ NODE_FEATURES = {
 
     # Passed
     "page_rank": FeatureMeta(PageRankCalculator, {"pr"}),
-    # "motif4": FeatureMeta(nth_nodes_motif(4), {"m4"}),
+    "motif4": FeatureMeta(nth_nodes_motif(4), {"m4"}),
     # "first_neighbor_histogram": FeatureMeta(nth_neighbor_calculator(1), {"fnh", "first_neighbor"}),
     # "second_neighbor_histogram": FeatureMeta(nth_neighbor_calculator(2), {"snh", "second_neighbor"}),
 }

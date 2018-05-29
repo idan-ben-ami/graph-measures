@@ -29,8 +29,11 @@ class MotifsNodeCalculator(NodeFeatureCalculator):
         return True
 
     @classmethod
-    def print_name(cls, level=3):
-        return "motifs%d" % level
+    def print_name(cls, level=None):
+        print_name = super(MotifsNodeCalculator, cls).print_name()
+        if level is None:
+            return print_name
+        return "%s_%d" % (print_name, level)
         # name = super(MotifsNodeCalculator, cls).print_name()
         # name.split("_")[0]
 

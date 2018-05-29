@@ -10,6 +10,7 @@ class AttractorBasinCalculator(NodeFeatureCalculator):
     def __init__(self, *args, alpha=2, **kwargs):
         super(AttractorBasinCalculator, self).__init__(*args, **kwargs)
         self._alpha = alpha
+        self._default_val = -1.
 
     def is_relevant(self):
         return self._gnx.is_directed()
@@ -25,13 +26,8 @@ class AttractorBasinCalculator(NodeFeatureCalculator):
                 continue
 
             node_dists = dists[node]
-            count_out_dist = Counter([node_dists.get(d) for d in nx.descendants(self._gnx, node)])
-            count_in_dist = Counter([dists.get(d, {}).get(node) for d in nx.ancestors(self._gnx, node)])
-            count_out_dist.pop(None, None)
-            count_in_dist.pop(None, None)
-
-            ab_out_dist[node] = count_out_dist
-            ab_in_dist[node] = count_in_dist
+            ab_out_dist[node] = Counter([node_dists[d] for d in nx.descendants(self._gnx, node)])
+            ab_in_dist[node] = Counter([dists[d][node] for d in nx.ancestors(self._gnx, node)])
 
         return ab_out_dist, ab_in_dist
 
@@ -45,7 +41,7 @@ class AttractorBasinCalculator(NodeFeatureCalculator):
             out_dist = ab_out_dist.get(node, {})
             in_dist = ab_in_dist.get(node, {})
 
-            self._features[node] = -1.
+            self._features[node] = self._default_val
             denominator = sum((dist / avg_out[m]) * (self._alpha ** (-m)) for m, dist in out_dist.items())
             if 0 != denominator:
                 numerator = sum((dist / avg_in[m]) * (self._alpha ** (-m)) for m, dist in in_dist.items())

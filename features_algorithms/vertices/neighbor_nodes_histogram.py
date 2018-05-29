@@ -22,10 +22,13 @@ class NthNeighborNodeHistogramCalculator(NodeFeatureCalculator):
         self._relation_types = ["".join(x) for x in cartesian(*(["io"] * self._neighbor_order))]
         self._print_name += "_%d" % (neighbor_order,)
         counter = {i: 0 for i in range(self._num_classes)}
-        self._features = {node: {rtype: counter.copy() for rtype in self._relation_types} for node in self._gnx}
-        # self._counter_tuple = namedtuple("EdgeCounter", self._relation_types)
+        if self._gnx.is_directed():
+            self._features = {node: {rtype: counter.copy() for rtype in self._relation_types} for node in self._gnx}
+        else:
+            self._features = {node: counter.copy() for node in self._gnx}
 
     def is_relevant(self):
+        # undirected is not supported yet
         return self._gnx.is_directed()
 
     def _get_node_neighbors_with_types(self, node):
@@ -48,6 +51,13 @@ class NthNeighborNodeHistogramCalculator(NodeFeatureCalculator):
         # Translating each label to a relevant index to save memory
         labels_map = {label: idx for idx, label in enumerate(self._gnx.graph["node_labels"])}
 
+        if self._gnx.is_directed():
+            self._calculate_directed(include, labels_map)
+        else:
+            # not supported yet - will never arrive here because of is_relevant
+            self._calculate_undirected(include, labels_map)
+
+    def _calculate_directed(self, include: set, labels_map):
         for node in self._gnx:
             history = {rtype: set() for rtype in self._relation_types}
             for r_type, neighbor in self._iter_nodes_of_order(node, self._neighbor_order):
@@ -62,10 +72,18 @@ class NthNeighborNodeHistogramCalculator(NodeFeatureCalculator):
                     neighbor_color = labels_map[neighbor_color]
                 self._features[node][full_type][neighbor_color] += 1
 
+    def _calculate_undirected(self, include: set, labels_map):
+        for node in self._gnx:
+            pass
+
     def _get_feature(self, element):
         cur_feature = self._features[element]
+        if not self._gnx.is_directed():
+            return np.array([cur_feature[x] for x in range(self._num_classes)])
+
         return np.array([[cur_feature[r_type][x] for x in range(self._num_classes)]
                          for r_type in self._relation_types]).flatten()
+
 
     # def _to_ndarray(self):
     #     mx = np.matrix([self._get_feature(node) for node in self._nodes()])

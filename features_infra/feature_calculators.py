@@ -47,6 +47,7 @@ class FeatureCalculator:
         self._logger = EmptyLogger() if logger is None else logger
         self._gnx = gnx
         self._print_name = self.print_name()
+        self._default_val = 0
 
     is_loaded = property(lambda self: self._is_loaded, None, None, "Whether the features were calculated")
 
@@ -96,19 +97,15 @@ class FeatureCalculator:
     def _params_order(self, input_order: list = None):
         raise NotImplementedError()
 
-    # sparse.csr_matrix
     def to_matrix(self, params_order: list = None, mtype=np.matrix, should_zscore: bool=True):
         mx = np.matrix([self._get_feature(element) for element in self._params_order(params_order)]).astype(np.float32)
+        # infinity is possible due to the change of the matrix type (i.e. overflow from 64 bit to 32 bit)
+        mx[np.isinf(mx)] = self._default_val
         if 1 == mx.shape[0]:
             mx = mx.transpose()
         if should_zscore:
             mx = z_scoring(mx)  # , axis=0)
         return mtype(mx)
-
-    # def __getattr__(self, item):
-    #     if item in self._features:
-    #         return self._features[item]
-    #     return self.__getattribute__(item)
 
     def __repr__(self):
         status = "loaded" if self.is_loaded else "not loaded"

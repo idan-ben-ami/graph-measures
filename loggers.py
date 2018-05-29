@@ -64,6 +64,9 @@ class CSVLogger(FileLogger):
         self._other_del = kwargs.pop("other_delimiter", "-")
         super(CSVLogger, self).__init__(*args, **kwargs)
 
+    def space(self, num_spaces=1):
+        self.info("\n" * num_spaces)
+
     def info(self, *args):
         args = [arg.replace(self._delimiter, self._other_del).replace(" ", "") if self._delimiter in arg else arg
                 for arg in map(str, args)]

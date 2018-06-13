@@ -4,31 +4,37 @@ from itertools import product as cartesian
 
 import networkx as nx
 import numpy as np
-
-# Python 2, 3 compatible metaclass
-# from future.utils import with_metaclass
-# with_metaclass(SingletonName, object)
-from scipy import sparse
+from networkx.algorithms.shortest_paths import unweighted
 
 from features_infra.feature_calculators import NodeFeatureCalculator, FeatureMeta
 from loggers import PrintLogger
 
 
-class NthNeighborNodeHistogramCalculator(NodeFeatureCalculator):
+class NeighborHistogramCalculator(NodeFeatureCalculator):
+    DUMPABLE = False
+
     def __init__(self, neighbor_order, *args, **kwargs):
-        super(NthNeighborNodeHistogramCalculator, self).__init__(*args, **kwargs)
+        super(NeighborHistogramCalculator, self).__init__(*args, **kwargs)
         self._num_classes = len(self._gnx.graph["node_labels"])
         self._neighbor_order = neighbor_order
-        self._relation_types = ["".join(x) for x in cartesian(*(["io"] * self._neighbor_order))]
-        self._print_name += "_%d" % (neighbor_order,)
-        counter = {i: 0 for i in range(self._num_classes)}
-        if self._gnx.is_directed():
-            self._features = {node: {rtype: counter.copy() for rtype in self._relation_types} for node in self._gnx}
-        else:
-            self._features = {node: counter.copy() for node in self._gnx}
 
     def is_relevant(self):
-        # undirected is not supported yet
+        raise NotImplementedError()
+
+    def _calculate(self, include: set):
+        # Translating each label to a relevant index to save memory
+        return {label: idx for idx, label in enumerate(self._gnx.graph["node_labels"])}
+
+
+class DirectedNthNeighborNodeHistogramCalculator(NeighborHistogramCalculator):
+    def __init__(self, *args, **kwargs):
+        super(DirectedNthNeighborNodeHistogramCalculator, self).__init__(*args, **kwargs)
+        counter = {i: 0 for i in range(self._num_classes)}
+        self._print_name += "_%d" % (self._neighbor_order,)
+        self._relation_types = ["".join(x) for x in cartesian(*(["io"] * self._neighbor_order))]
+        self._features = {node: {rtype: counter.copy() for rtype in self._relation_types} for node in self._gnx}
+
+    def is_relevant(self):
         return self._gnx.is_directed()
 
     def _get_node_neighbors_with_types(self, node):
@@ -39,7 +45,7 @@ class NthNeighborNodeHistogramCalculator(NodeFeatureCalculator):
         for out_edge in self._gnx.out_edges(node):
             yield ("o", out_edge[1])
 
-    def _iter_nodes_of_order(self, node, order: int):
+    def _iter_nodes_of_order(self, node, order):
         if 0 >= order:
             yield [], node
             return
@@ -49,15 +55,8 @@ class NthNeighborNodeHistogramCalculator(NodeFeatureCalculator):
 
     def _calculate(self, include: set):
         # Translating each label to a relevant index to save memory
-        labels_map = {label: idx for idx, label in enumerate(self._gnx.graph["node_labels"])}
+        labels_map = super(DirectedNthNeighborNodeHistogramCalculator, self)._calculate(include)
 
-        if self._gnx.is_directed():
-            self._calculate_directed(include, labels_map)
-        else:
-            # not supported yet - will never arrive here because of is_relevant
-            self._calculate_undirected(include, labels_map)
-
-    def _calculate_directed(self, include: set, labels_map):
         for node in self._gnx:
             history = {rtype: set() for rtype in self._relation_types}
             for r_type, neighbor in self._iter_nodes_of_order(node, self._neighbor_order):
@@ -72,26 +71,48 @@ class NthNeighborNodeHistogramCalculator(NodeFeatureCalculator):
                     neighbor_color = labels_map[neighbor_color]
                 self._features[node][full_type][neighbor_color] += 1
 
-    def _calculate_undirected(self, include: set, labels_map):
-        for node in self._gnx:
-            pass
-
     def _get_feature(self, element):
         cur_feature = self._features[element]
-        if not self._gnx.is_directed():
-            return np.array([cur_feature[x] for x in range(self._num_classes)])
-
         return np.array([[cur_feature[r_type][x] for x in range(self._num_classes)]
                          for r_type in self._relation_types]).flatten()
 
 
-    # def _to_ndarray(self):
-    #     mx = np.matrix([self._get_feature(node) for node in self._nodes()])
-    #     return mx.astype(np.float32)
+class UndirectedNthNeighborNodeHistogramCalculator(NeighborHistogramCalculator):
+    def __init__(self, *args, **kwargs):
+        super(UndirectedNthNeighborNodeHistogramCalculator, self).__init__(*args, **kwargs)
+        counter = {i: 0 for i in range(self._num_classes)}
+        self._neighbor_order = set(self._neighbor_order)
+        self._print_name += "_%s" % ("-".join(map(str, self._neighbor_order)),)
+        self._features = {node: {order: counter.copy() for order in self._neighbor_order} for node in self._gnx}
+
+    def is_relevant(self):
+        return not self._gnx.is_directed()
+
+    def _calculate(self, include: set):
+        # Translating each label to a relevant index to save memory
+
+        labels_map = super(UndirectedNthNeighborNodeHistogramCalculator, self)._calculate(include)
+
+        dists = unweighted.all_pairs_shortest_path_length(self._gnx, cutoff=max(self._neighbor_order))
+        for i, (node, node_dists) in enumerate(dists):
+            for neighbor, neigh_dist in node_dists.items():
+                if node == neighbor or neigh_dist not in self._neighbor_order or neighbor not in include:
+                    continue
+                neighbor_color = self._gnx.node[neighbor]["label"]
+                if neighbor_color in labels_map:
+                    neighbor_color = labels_map[neighbor_color]
+                self._features[node][neigh_dist][neighbor_color] += 1
+
+    def _get_feature(self, element):
+        # TODO: fix for several neighbor dists
+        cur_feature = self._features[element]
+        return np.array([cur_feature[x] for x in range(self._num_classes)])
 
 
-def nth_neighbor_calculator(order):
-    return partial(NthNeighborNodeHistogramCalculator, order)
+def nth_neighbor_calculator(order, is_directed=True):
+    if is_directed:
+        return partial(DirectedNthNeighborNodeHistogramCalculator, order)
+    return partial(UndirectedNthNeighborNodeHistogramCalculator, order)
 
 
 feature_entry = {

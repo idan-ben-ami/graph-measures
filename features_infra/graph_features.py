@@ -64,7 +64,7 @@ class GraphFeatures(dict):
         for name, feature in self.items():
             if force_build or not os.path.exists(self._feature_path(name)):
                 feature.build(include=include)
-                if dump_path is not None:
+                if dump_path is not None and feature.DUMPABLE:
                     self._dump_feature(name, feature, dump_path)
             else:
                 self._load_feature(name)

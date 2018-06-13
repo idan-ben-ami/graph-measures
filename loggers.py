@@ -49,9 +49,23 @@ class FileLogger(BaseLogger):
         if add_timestamp:
             filename += time.strftime("-%Y-%m-%d-%H%M%S")
 
-        mode = 'w' if should_overwrite else 'a'
+        self._filename = {"fname": filename, "ext": ext}
+        self._mode = 'w' if should_overwrite else 'a'
+        self._cur_handler = None
+        self._new_file()
 
-        self.addHandler(logging.FileHandler("%s.%s" % (filename, ext,), mode=mode))
+    def _new_file(self):
+        if "index" not in self._filename:
+            f_name = "%s.%s" % (self._filename["fname"], self._filename["ext"],)
+            self._filename["index"] = 0
+        else:
+            f_name = "%s_%s.%s" % (self._filename["fname"], self._filename["index"], self._filename["ext"],)
+        self._filename["index"] += 1
+
+        if self._cur_handler is not None:
+            self.removeHandler(self._cur_handler)
+        self._cur_handler = logging.FileHandler(f_name, mode=self._mode)
+        self.addHandler(self._cur_handler)
         self._initialize_handler()
 
 
@@ -62,15 +76,27 @@ class CSVLogger(FileLogger):
         kwargs["log_format"] = "%(message)s"
         self._delimiter = kwargs.pop("delimiter", ",")
         self._other_del = kwargs.pop("other_delimiter", "-")
+        self._titles = []
         super(CSVLogger, self).__init__(*args, **kwargs)
 
     def space(self, num_spaces=1):
         self.info("\n" * num_spaces)
 
-    def info(self, *args):
+    def info(self, *args, **kwargs):
+        if "new_file" in kwargs:
+            self._new_file()
+
         args = [arg.replace(self._delimiter, self._other_del).replace(" ", "") if self._delimiter in arg else arg
                 for arg in map(str, args)]
         super(CSVLogger, self).info(self._delimiter.join(args))
+
+    def set_titles(self, *args):
+        self._titles = args
+        self.info(*args)
+
+    def log_info(self, **kwargs):
+        vals = [kwargs.get(x, "") for x in self._titles]
+        self.info(*vals)
 
 
 class PrintLogger(BaseLogger):

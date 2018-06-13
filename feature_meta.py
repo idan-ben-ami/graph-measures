@@ -15,6 +15,7 @@ from features_algorithms.vertices.load_centrality import LoadCentralityCalculato
 from features_algorithms.vertices.louvain import LouvainCalculator
 # from features_algorithms.vertices.neighbor_nodes_histogram import nth_neighbor_calculator
 from features_algorithms.vertices.motifs import nth_nodes_motif
+from features_algorithms.vertices.neighbor_nodes_histogram import nth_neighbor_calculator
 from features_algorithms.vertices.page_rank import PageRankCalculator
 from features_infra.feature_calculators import FeatureMeta, FeatureCalculator
 
@@ -52,13 +53,23 @@ NODE_FEATURES = {
 
     # Previous version bug
     "motif3": FeatureMeta(nth_nodes_motif(3), {"m3"}),
+    # "motif4": FeatureMeta(nth_nodes_motif(4), {"m4"}),
 
     # Passed
     "page_rank": FeatureMeta(PageRankCalculator, {"pr"}),
-    "motif4": FeatureMeta(nth_nodes_motif(4), {"m4"}),
-    # "first_neighbor_histogram": FeatureMeta(nth_neighbor_calculator(1), {"fnh", "first_neighbor"}),
-    # "second_neighbor_histogram": FeatureMeta(nth_neighbor_calculator(2), {"snh", "second_neighbor"}),
 }
+
+
+UNDIRECTED_NEIGHBOR_FEATURES = {
+    "neighbor_histogram": FeatureMeta(nth_neighbor_calculator([1, 2], is_directed=False), {"nh", "neighbor"}),
+}
+
+
+DIRECTED_NEIGHBOR_FEATURES = {
+    "first_neighbor_histogram": FeatureMeta(nth_neighbor_calculator(1, is_directed=True), {"fnh", "first_neighbor"}),
+    "second_neighbor_histogram": FeatureMeta(nth_neighbor_calculator(2, is_directed=True), {"snh", "second_neighbor"}),
+}
+
 
 GRAPH_FEATURES = {
     "feat_name": FeatureMeta(FeatureCalculator, {"abbr1", "abbr2"}),

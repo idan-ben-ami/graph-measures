@@ -13,14 +13,14 @@ from loggers import EmptyLogger
 # Old zscore code.. should use scipy.stats.zscore
 def z_scoring(matrix):
     new_matrix = np.asmatrix(matrix)
-    minimum = np.asarray(new_matrix.min(0))  # column wise
-    for i in range(minimum.shape[1]):
-        if minimum[0, i] > 0:
+    minimum = np.asarray(new_matrix.min(axis=0)).reshape(-1)  # column wise
+    for i, min_val in enumerate(minimum):
+        if min_val > 0:
             new_matrix[:, i] = np.log10(new_matrix[:, i])
-        elif minimum[0, i] == 0:
+        elif (min_val == 0) and (new_matrix[:, i].std() > 0):
             new_matrix[:, i] = np.log10(new_matrix[:, i] + 0.1)
         if new_matrix[:, i].std() > 0:
-            new_matrix[:, i] = (new_matrix[:, i] - new_matrix[:, i].min()) / new_matrix[:, i].std()
+            new_matrix[:, i] = (new_matrix[:, i] - new_matrix[:, i].mean()) / new_matrix[:, i].std()
     return new_matrix
 
 
@@ -30,7 +30,10 @@ def time_log(func):
         self._logger.debug("Start %s" % (self._print_name,))
         res = func(self, *args, **kwargs)
         cur_time = datetime.now()
-        self._logger.debug("Finish %s at %s" % (self._print_name, cur_time - start_time,))
+        if self.is_relevant():
+            self._logger.debug("Finish %s at %s" % (self._print_name, cur_time - start_time,))
+        else:
+            self._logger.debug("Finish %s - irrelevant" % (self._print_name,))
         self._is_loaded = True  # Very bad place to put it - choose somewhere else
         return res
 
@@ -38,6 +41,7 @@ def time_log(func):
 
 
 class FeatureCalculator:
+    DUMPABLE = True
     META_VALUES = ["_gnx", "_logger"]
 
     def __init__(self, gnx, logger=None):

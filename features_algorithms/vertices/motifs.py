@@ -168,12 +168,14 @@ class MotifsNodeCalculator(NodeFeatureCalculator):
             self._features[node][motif_num] += 1
 
     def _calculate(self, include=None):
+        m_gnx = self._gnx.copy()
         motif_counter = {motif_number: 0 for motif_number in self._all_motifs}
         self._features = {node: motif_counter.copy() for node in self._gnx}
         for i, (group, group_num, motif_num) in enumerate(self._calculate_motif()):
             self._update_nodes_group(group, motif_num)
             if (i + 1) % 1000 == 0 and VERBOSE:
                 self._logger.debug("Groups: %d" % i)
+        self._gnx = m_gnx
 
     def _get_feature(self, element):
         all_motifs = self._all_motifs.difference(set([None]))

@@ -1,15 +1,14 @@
 import os
 import pickle
-
 from multiprocessing import Process, Queue
-
-from features_infra.feature_calculators import FeatureCalculator
-from loggers import PrintLogger, EmptyLogger
+from operator import itemgetter as at
 
 import networkx as nx
 import numpy as np
-from scipy import sparse
-from operator import itemgetter as at
+
+from features_infra import VERBOSE
+from features_infra.feature_calculators import FeatureCalculator
+from loggers import EmptyLogger
 
 
 class Worker(Process):
@@ -32,6 +31,14 @@ class Worker(Process):
             self._calculators[feature_name].build(include=self._include)
 
 
+def get_max_subgraph(gnx):
+    if gnx.is_directed():
+        subgraphs = nx.weakly_connected_component_subgraphs(gnx)
+    else:
+        subgraphs = nx.connected_component_subgraphs(gnx)
+    return max(subgraphs, key=len)
+
+
 # object that calculates & holds a list of features of a graph.
 class GraphFeatures(dict):
     def __init__(self, gnx, features, dir_path, logger=None, is_max_connected=False):
@@ -39,14 +46,7 @@ class GraphFeatures(dict):
         self._logger = EmptyLogger() if logger is None else logger
         self._matrix = None
 
-        if is_max_connected:
-            if gnx.is_directed():
-                subgraphs = nx.weakly_connected_component_subgraphs(gnx)
-            else:
-                subgraphs = nx.connected_component_subgraphs(gnx)
-            self._gnx = max(subgraphs, key=len)
-        else:
-            self._gnx = gnx
+        self._gnx = get_max_subgraph(gnx) if is_max_connected else gnx
 
         self._abbreviations = {abbr: name for name, meta in features.items() for abbr in meta.abbr_set}
 
@@ -59,6 +59,8 @@ class GraphFeatures(dict):
         return self._gnx
 
     def _build_serially(self, include, force_build: bool = False, dump_path: str = None):
+        if VERBOSE:
+            self._logger.debug("Start building graph features")
         if dump_path is not None and self._gnx is not None:
             pickle.dump(self._gnx, open(self._feature_path("gnx", dump_path), "wb"))
         for name, feature in self.items():
@@ -68,6 +70,8 @@ class GraphFeatures(dict):
                     self._dump_feature(name, feature, dump_path)
             else:
                 self._load_feature(name)
+        if VERBOSE:
+            self._logger.debug("Finished building graph features")
 
     # a single process means it is calculated serially
     def build(self, num_processes: int = 1, include: set = None, should_dump: bool = False):  # , exclude: set=None):
@@ -155,6 +159,15 @@ class GraphFeatures(dict):
 
         for name, feature in self.items():
             self._dump_feature(name, feature, dir_path)
+
+    @property
+    def shape(self):
+        sorted_features = map(at(1), sorted(self.items(), key=at(0)))
+        sorted_features = [feature for feature in sorted_features if feature.is_relevant() and feature.is_loaded]
+        res = []
+        for feature in sorted_features:
+            res.append((feature.print_name()), feature.shape[1])
+        return res
 
     # sparse.csr_matrix(matrix, dtype=np.float32)
     def to_matrix(self, entries_order: list = None, add_ones=False, dtype=None, mtype=np.matrix,

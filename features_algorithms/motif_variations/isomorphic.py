@@ -5,6 +5,16 @@ from itertools import combinations, permutations
 import networkx as nx
 
 
+def contain_2d_edges(gnx):
+    if not gnx.is_directed():
+        return True
+    for src in gnx:
+        for s, dst in gnx.out_edges(src):
+            if dst != src and gnx.has_edge(dst, src):
+                return True
+    return False
+
+
 class IsomorphismGenerator:
     def __init__(self, group_size, is_directed):
         self._group_size = group_size
@@ -60,6 +70,12 @@ class IsomorphismGenerator:
 
     def num_2_motif(self):
         return {num: motif_num for motif_num, group in self._isomorphisms.items() for num in group}
+
+    def group_by(self, func):
+        res = {}
+        for n, graphs in self._isomorphisms.items():
+            res[n] = func(next(x for x in graphs.values()))
+        return res
 
 
 def main(level, is_directed):

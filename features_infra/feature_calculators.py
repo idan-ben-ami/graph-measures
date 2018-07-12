@@ -3,9 +3,7 @@ from collections import namedtuple
 from datetime import datetime
 from itertools import chain
 
-import networkx as nx
 import numpy as np
-# from scipy.stats import zscore
 
 from loggers import EmptyLogger
 
@@ -100,6 +98,11 @@ class FeatureCalculator:
 
     def _params_order(self, input_order: list = None):
         raise NotImplementedError()
+
+    @property
+    def shape(self):
+        elem = next(self._get_feature(element) for element in self._params_order())
+        return len(self._features), elem.shape()
 
     def to_matrix(self, params_order: list = None, mtype=np.matrix, should_zscore: bool=True):
         mx = np.matrix([self._get_feature(element) for element in self._params_order(params_order)]).astype(np.float32)

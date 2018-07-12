@@ -61,7 +61,10 @@ class DirectedNthNeighborNodeHistogramCalculator(NeighborHistogramCalculator):
             history = {rtype: set() for rtype in self._relation_types}
             for r_type, neighbor in self._iter_nodes_of_order(node, self._neighbor_order):
                 full_type = "".join(r_type)
-                if node == neighbor or neighbor not in include or neighbor in history[full_type]:
+                if (node == neighbor) or \
+                        (neighbor not in include) or \
+                        (neighbor in history[full_type]) or \
+                        ("label" not in self._gnx.node[neighbor]):
                     continue
                 history[full_type].add(neighbor)
 
@@ -96,7 +99,10 @@ class UndirectedNthNeighborNodeHistogramCalculator(NeighborHistogramCalculator):
         dists = unweighted.all_pairs_shortest_path_length(self._gnx, cutoff=max(self._neighbor_order))
         for i, (node, node_dists) in enumerate(dists):
             for neighbor, neigh_dist in node_dists.items():
-                if node == neighbor or neigh_dist not in self._neighbor_order or neighbor not in include:
+                if (node == neighbor) or \
+                        (neigh_dist not in self._neighbor_order) or \
+                        (neighbor not in include) or \
+                        ("label" not in self._gnx.node[neighbor]):
                     continue
                 neighbor_color = self._gnx.node[neighbor]["label"]
                 if neighbor_color in labels_map:
@@ -104,9 +110,8 @@ class UndirectedNthNeighborNodeHistogramCalculator(NeighborHistogramCalculator):
                 self._features[node][neigh_dist][neighbor_color] += 1
 
     def _get_feature(self, element):
-        # TODO: fix for several neighbor dists
         cur_feature = self._features[element]
-        return np.array([cur_feature[x] for x in range(self._num_classes)])
+        return np.array([cur_feature[dist][x] for dist in sorted(cur_feature) for x in range(self._num_classes)])
 
 
 def nth_neighbor_calculator(order, is_directed=True):

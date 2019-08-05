@@ -11,7 +11,7 @@ from loggers import PrintLogger
 
 
 class NeighborHistogramCalculator(NodeFeatureCalculator):
-    DUMPABLE = False
+    DUMPABLE = True
 
     def __init__(self, neighbor_order, *args, **kwargs):
         super(NeighborHistogramCalculator, self).__init__(*args, **kwargs)

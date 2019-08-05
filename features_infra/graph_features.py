@@ -65,8 +65,10 @@ class GraphFeatures(dict):
             pickle.dump(self._gnx, open(self._feature_path("gnx", dump_path), "wb"))
         for name, feature in self.items():
             if force_build or not os.path.exists(self._feature_path(name)):
-                feature.build(include=include)
-                if dump_path is not None and feature.DUMPABLE:
+                is_dumped = dump_path is not None and feature.DUMPABLE
+                msg = "Dumped to: %s" % dump_path if is_dumped else "Not dumped"
+                feature.build(include=include, msg=msg)
+                if is_dumped:
                     self._dump_feature(name, feature, dump_path)
             else:
                 self._load_feature(name)

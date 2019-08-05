@@ -37,6 +37,11 @@ class BaseLogger(logging.getLoggerClass()):
     def close(self):
         logging.shutdown([x.__weakref__ for x in self.handlers])
 
+    def dump_location(self):
+        for handler in self.handlers:
+            if isinstance(handler, logging.FileHandler):
+                print("%s. Writing (%s) to file <%s>" % (type(self).__name__, logging.getLevelName(handler.level), handler.baseFilename,))
+
 
 class FileLogger(BaseLogger):
     def __init__(self, filename, *args, ext="log", path="logs", add_timestamp=False, should_overwrite=True, **kwargs):
@@ -52,6 +57,7 @@ class FileLogger(BaseLogger):
         self._filename = {"fname": filename, "ext": ext}
         self._mode = 'w' if should_overwrite else 'a'
         self._cur_handler = None
+        self._cur_fname = ""
         self._new_file()
 
     def _new_file(self):
@@ -65,8 +71,12 @@ class FileLogger(BaseLogger):
         if self._cur_handler is not None:
             self.removeHandler(self._cur_handler)
         self._cur_handler = logging.FileHandler(f_name, mode=self._mode)
+        self._cur_fname = f_name
         self.addHandler(self._cur_handler)
         self._initialize_handler()
+
+    def get_location(self):
+        return ".".join([self._filename["fname"], self._filename["ext"]])
 
 
 class CSVLogger(FileLogger):

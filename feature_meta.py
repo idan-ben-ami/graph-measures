@@ -53,7 +53,7 @@ NODE_FEATURES = {
 
     # Previous version bug
     "motif3": FeatureMeta(nth_nodes_motif(3), {"m3"}),
-    # "motif4": FeatureMeta(nth_nodes_motif(4), {"m4"}),
+    "motif4": FeatureMeta(nth_nodes_motif(4), {"m4"}),
 
     # Passed
     "page_rank": FeatureMeta(PageRankCalculator, {"pr"}),

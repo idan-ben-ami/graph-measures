@@ -23,9 +23,11 @@ def z_scoring(matrix):
 
 
 def time_log(func):
-    def wrapper(self, *args, **kwargs):
+    def wrapper(self, *args, msg="", **kwargs):
         start_time = datetime.now()
-        self._logger.debug("Start %s" % (self._print_name,))
+        if msg:
+            msg = " (%s)" % msg
+        self._logger.debug("Start %s%s" % (self._print_name, msg,))
         res = func(self, *args, **kwargs)
         cur_time = datetime.now()
         if self.is_relevant():
